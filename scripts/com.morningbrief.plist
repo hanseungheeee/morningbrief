@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- 이 작업의 고유 이름 -->
+    <key>Label</key>
+    <string>com.morningbrief</string>
+
+    <!-- 실행할 명령: bash 로 run_daily.sh 실행 (경로에 공백 있으므로 각 인자 분리) -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/han/Desktop/sh notice/morning-brief/scripts/run_daily.sh</string>
+    </array>
+
+    <!-- 매일 오전 7시(맥 로컬 시간 = KST)에 실행. 미국장 마감(KST 새벽 5~6시) 이후라 마감 데이터가 들어온다. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>7</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <!-- launchd 자체 표준출력/에러 로그 -->
+    <key>StandardOutPath</key>
+    <string>/Users/han/Desktop/sh notice/morning-brief/logs/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/han/Desktop/sh notice/morning-brief/logs/launchd.err.log</string>
+
+    <!-- 로드 시 즉시 실행하지 않음 (정해진 시각에만) -->
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>
