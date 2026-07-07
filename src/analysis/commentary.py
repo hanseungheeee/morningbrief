@@ -3,11 +3,29 @@
 from __future__ import annotations
 
 import json
+import time
 
 from google import genai
 from google.genai import types
 
 from config import GEMINI_API_KEY, GEMINI_MAX_TOKENS, GEMINI_MODEL
+
+# 일시적(재시도하면 풀리는) 서버 오류. 나머지(400/401/403 등)는 재시도해도 소용없어 즉시 포기.
+_RETRYABLE_CODES = {429, 500, 502, 503, 504}
+_RETRYABLE_HINTS = ("unavailable", "overloaded", "high demand", "resource_exhausted",
+                    "deadline", "timeout", "internal")
+# 재시도 정책: 최초 1회 + 재시도 3회, 대기 2·4·8초 (지수 백오프)
+_MAX_ATTEMPTS = 4
+_BACKOFF_BASE = 2.0
+
+
+def _is_retryable(exc: Exception) -> bool:
+    """일시적 서버 오류인지 판단한다. (code 또는 메시지 키워드로 판별)"""
+    code = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+    if code in _RETRYABLE_CODES:
+        return True
+    text = str(exc).lower()
+    return any(hint in text for hint in _RETRYABLE_HINTS)
 
 # 해설 원칙과 톤을 못박는 시스템 프롬프트
 SYSTEM_PROMPT = """당신은 한국경제TV의 미국 증시 아침 브리핑을 쓰는 시장 해설가입니다.
@@ -88,23 +106,41 @@ def generate_commentary(market: dict, crypto: list[dict], news: list[dict]) -> d
 
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=_build_user_message(market, crypto, news),
-            config=types.GenerateContentConfig(
-                # 시스템 프롬프트는 Gemini에선 system_instruction 으로 전달
-                system_instruction=SYSTEM_PROMPT,
-                # 순수 JSON 강제 (Gemini 옵션)
-                response_mime_type="application/json",
-                max_output_tokens=GEMINI_MAX_TOKENS,
-                # thinking 비활성화: 정해진 JSON 출력엔 불필요하고, 켜두면 thinking이
-                # 출력 토큰 예산을 소진해 JSON이 잘린다 (2.5-flash는 thinking 모델).
-                thinking_config=types.ThinkingConfig(thinking_budget=0),
-            ),
-        )
     except Exception as exc:
-        print(f"[경고] Gemini 해설 API 호출 실패: {exc}")
+        print(f"[경고] Gemini 클라이언트 초기화 실패: {exc}")
         return None
+
+    contents = _build_user_message(market, crypto, news)
+    gen_config = types.GenerateContentConfig(
+        # 시스템 프롬프트는 Gemini에선 system_instruction 으로 전달
+        system_instruction=SYSTEM_PROMPT,
+        # 순수 JSON 강제 (Gemini 옵션)
+        response_mime_type="application/json",
+        max_output_tokens=GEMINI_MAX_TOKENS,
+        # thinking 비활성화: 정해진 JSON 출력엔 불필요하고, 켜두면 thinking이
+        # 출력 토큰 예산을 소진해 JSON이 잘린다 (2.5-flash는 thinking 모델).
+        thinking_config=types.ThinkingConfig(thinking_budget=0),
+    )
+
+    # 일시적 503/429 등은 지수 백오프로 재시도. 그 외 오류는 즉시 포기(None 폴백).
+    response = None
+    for attempt in range(1, _MAX_ATTEMPTS + 1):
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=contents,
+                config=gen_config,
+            )
+            break
+        except Exception as exc:
+            if _is_retryable(exc) and attempt < _MAX_ATTEMPTS:
+                wait = _BACKOFF_BASE ** attempt
+                print(f"[경고] Gemini 해설 API 일시 실패({attempt}/{_MAX_ATTEMPTS - 1}), "
+                      f"{wait:.0f}초 후 재시도: {exc}")
+                time.sleep(wait)
+                continue
+            print(f"[경고] Gemini 해설 API 호출 실패: {exc}")
+            return None
 
     # 응답 텍스트 추출
     text = response.text or ""
