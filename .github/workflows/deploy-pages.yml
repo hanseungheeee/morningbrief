@@ -1,0 +1,40 @@
+name: Deploy morning-brief to GitHub Pages
+
+# main 브랜치에 push 될 때마다 output/ 을 GitHub Pages 로 배포한다.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # 수동 실행도 허용
+
+# Pages 배포에 필요한 권한
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 동시 배포 방지 (마지막 것만 반영)
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Pages 설정
+        uses: actions/configure-pages@v5
+
+      - name: output/ 을 Pages 아티팩트로 업로드
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./output
+
+      - name: Pages 배포
+        id: deployment
+        uses: actions/deploy-pages@v4

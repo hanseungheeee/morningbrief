@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>미국 증시 아침 브리핑 - 2026-07-07</title>
+<style>
+  /* 한국식 등락 색상: 상승=빨강, 하락=파랑, 보합=회색 */
+  :root {
+    --up: #e01e1e;
+    --down: #1560d0;
+    --flat: #888;
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --muted: #666;
+    --border: #e3e5e9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --up: #ff5b5b;
+      --down: #5b9bff;
+      --flat: #999;
+      --bg: #15171c;
+      --card: #1f2229;
+      --text: #f0f0f2;
+      --muted: #9aa0aa;
+      --border: #2c3038;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; }
+
+  /* 헤더 */
+  header { text-align: center; margin-bottom: 20px; }
+  header .date { font-size: 14px; color: var(--muted); }
+  header h1 { font-size: 22px; margin: 4px 0 2px; }
+  header .collected { font-size: 12px; color: var(--muted); }
+
+  /* 섹션 */
+  section { margin-bottom: 22px; }
+  section h2 {
+    font-size: 15px;
+    margin: 0 0 10px;
+    padding-left: 8px;
+    border-left: 4px solid var(--text);
+  }
+
+  /* 지수 카드 그리드 */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .card .label { font-size: 13px; color: var(--muted); }
+  .card .price { font-size: 20px; font-weight: 700; margin: 4px 0 2px; }
+  .card .chg { font-size: 13px; font-weight: 600; }
+
+  /* 표 (매크로·암호화폐) */
+  table { width: 100%; border-collapse: collapse; background: var(--card);
+          border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  th, td { padding: 11px 14px; text-align: right; font-size: 14px; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { font-size: 12px; color: var(--muted); font-weight: 600;
+             border-bottom: 1px solid var(--border); }
+  tbody tr + tr td { border-top: 1px solid var(--border); }
+  td .name { color: var(--text); }
+  td .price { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  /* 등락 색상 */
+  .up { color: var(--up); }
+  .down { color: var(--down); }
+  .flat { color: var(--flat); }
+
+  /* 오늘의 장 요약 블록 */
+  .summary {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 22px;
+  }
+  .summary h2 { font-size: 15px; margin: 0 0 8px; }
+  .summary p { margin: 0 0 10px; font-size: 14px; }
+  .summary ul { margin: 0; padding-left: 18px; }
+  .summary li { font-size: 13px; color: var(--muted); margin: 3px 0; }
+
+  /* 섹션별 해설 (카드/표와 시각적으로 구분: 옅은 배경 + 작은 글씨 + 라벨) */
+  .comment {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: rgba(127, 127, 127, 0.08);
+    border-left: 3px solid var(--flat);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .comment .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    margin-right: 6px;
+  }
+
+  footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="date">2026-07-07</div>
+    <h1>미국 증시 아침 브리핑</h1>
+    <div class="collected">수집 시각 2026-07-07 10:46:19</div>
+  </header>
+
+  <!-- 오늘의 장 요약 (해설 있을 때만) -->
+  
+
+  <!-- 섹션1: 3대 지수 + 러셀2000 -->
+  <section>
+    <h2>주요 지수</h2>
+    <div class="cards">
+      
+      <div class="card">
+        <div class="label">S&amp;P 500</div>
+        <div class="price">7,537.43</div>
+        <div class="chg up">+0.72% (+54.19)</div>
+      </div>
+      
+      <div class="card">
+        <div class="label">나스닥</div>
+        <div class="price">26,121.16</div>
+        <div class="chg up">+1.12% (+288.49)</div>
+      </div>
+      
+      <div class="card">
+        <div class="label">다우</div>
+        <div class="price">53,055.91</div>
+        <div class="chg up">+0.29% (+155.84)</div>
+      </div>
+      
+      <div class="card">
+        <div class="label">러셀 2000</div>
+        <div class="price">3,009.54</div>
+        <div class="chg up">+0.45% (+13.43)</div>
+      </div>
+      
+    </div>
+    
+  </section>
+
+  <!-- 섹션2: 매크로 지표 -->
+  <section>
+    <h2>매크로 지표</h2>
+    <table>
+      <thead>
+        <tr><th>지표</th><th>현재가</th><th>등락률</th><th>등락폭</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="name">금</span></td>
+          <td class="price">4,152.00</td>
+          <td class="up">+0.96%</td>
+          <td class="up">+39.30</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">WTI 유가</span></td>
+          <td class="price">68.81</td>
+          <td class="up">+0.17%</td>
+          <td class="up">+0.12</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">미 10년물 국채금리</span></td>
+          <td class="price">4.48</td>
+          <td class="down">-0.13%</td>
+          <td class="down">-0.01</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">달러 인덱스</span></td>
+          <td class="price">100.84</td>
+          <td class="down">-0.02%</td>
+          <td class="down">-0.02</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">VIX</span></td>
+          <td class="price">15.57</td>
+          <td class="down">-3.59%</td>
+          <td class="down">-0.58</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </section>
+
+  <!-- 섹션3: 암호화폐 -->
+  <section>
+    <h2>암호화폐 (USD)</h2>
+    <table>
+      <thead>
+        <tr><th>코인</th><th>현재가</th><th>24h 등락률</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="name">비트코인</span></td>
+          <td class="price">63,905.00</td>
+          <td class="up">+0.53%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">이더리움</span></td>
+          <td class="price">1,793.69</td>
+          <td class="up">+0.46%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">리플</span></td>
+          <td class="price">1.14</td>
+          <td class="down">-1.39%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">솔라나</span></td>
+          <td class="price">81.88</td>
+          <td class="down">-0.01%</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </section>
+
+  <footer>미국 증시 아침 브리핑 · 자동 생성</footer>
+
+</div>
+</body>
+</html>

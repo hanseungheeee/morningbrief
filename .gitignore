@@ -1,0 +1,16 @@
+# 비밀·환경 (절대 커밋 금지)
+.env
+
+# macOS 잡파일
+.DS_Store
+
+# 파이썬 가상환경·캐시
+venv/
+__pycache__/
+*.pyc
+
+# 로컬 데이터 아티팩트 (매 실행 시 재생성되므로 커밋 안 함)
+data/*.json
+!data/.gitkeep
+
+# output/ 은 GitHub Pages 서빙 대상이므로 커밋한다 (index.html 등 포함)

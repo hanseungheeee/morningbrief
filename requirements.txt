@@ -1,0 +1,5 @@
+yfinance
+requests
+jinja2
+google-genai
+python-dotenv
