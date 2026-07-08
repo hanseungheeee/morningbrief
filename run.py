@@ -11,7 +11,7 @@ from src.analysis.commentary import generate_commentary
 from src.collectors.crypto import collect_crypto
 from src.collectors.market import collect_indices, collect_macros
 from src.collectors.movers import collect_movers
-from src.collectors.news import collect_news, collect_stock_news
+from src.collectors.news import collect_news, collect_stock_news, filter_policy_news
 from src.collectors.stocks import collect_stocks
 from src.notify.telegram import send_notification
 from src.render.builder import render
@@ -45,6 +45,13 @@ def collect_all(with_commentary: bool = True) -> dict:
         print(f"[경고] 뉴스 수집 단계 실패: {exc}")
         news = []
 
+    # 연준·정책 뉴스 선별 (추가 API 호출 없음, 실패해도 계속)
+    try:
+        policy_news = filter_policy_news(news)
+    except Exception as exc:
+        print(f"[경고] 정책 뉴스 필터 실패: {exc}")
+        policy_news = []
+
     # 시장 무버 추출 (실패해도 파이프라인은 계속)
     try:
         movers = collect_movers()
@@ -71,7 +78,7 @@ def collect_all(with_commentary: bool = True) -> dict:
     commentary = None
     if with_commentary:
         commentary = generate_commentary(market, crypto, news, stocks, stock_news,
-                                         movers, mover_news)
+                                         movers, mover_news, policy_news)
 
     return {
         "date": now.strftime("%Y-%m-%d"),
@@ -81,9 +88,10 @@ def collect_all(with_commentary: bool = True) -> dict:
         "stocks": stocks,
         "movers": movers,
         "news": news,
+        "policy_news": policy_news,
         "stock_news": stock_news,
         "mover_news": mover_news,
-        # 종목·무버 코멘트는 commentary.stock_comments / commentary.mover_comments 에 포함
+        # 종목·무버·정책 코멘트는 commentary 안에 포함 (stock/mover_comments, policy_comment)
         "commentary": commentary,
     }
 

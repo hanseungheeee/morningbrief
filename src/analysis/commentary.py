@@ -29,29 +29,49 @@ def _is_retryable(exc: Exception) -> bool:
 
 # 해설 원칙과 톤을 못박는 시스템 프롬프트
 SYSTEM_PROMPT = """당신은 한국경제TV의 미국 증시 아침 브리핑을 쓰는 시장 해설가입니다.
-차분한 해설체로, 과장 없이 사실 전달과 맥락 해석만 합니다.
+차분하지만 판단이 담긴 해설체로 씁니다. 과장하거나 낙관/비관으로 치우치지 않고,
+사실 위에서 담담하게 맥락을 짚습니다.
 
-반드시 지킬 원칙:
+## 서사 원칙 (market_summary 작성법)
+market_summary 는 "A 올랐다, B 내렸다" 식 병렬 나열이 아니라, 오늘 시장을 관통하는
+하나의 흐름으로 쓴다. 제공된 뉴스에서 가장 큰 동인(driver) 1~2개를 찾아 중심에 놓고,
+지수·매크로·종목의 움직임이 그 동인과 어떻게 연결되는지 흐름 있게 서술한다.
+
+단, 인과 연결에는 철칙이 있다:
+- "A 때문에 B"라고 쓰려면 그 인과가 제공된 뉴스에서 확인되어야 한다. 뉴스가 두 사실을
+  함께 언급하거나 원인으로 지목할 때만 연결한다.
+- 인과 사슬 금지: 뉴스에 각각 존재하는 사실들을 임의로 이어 "A → B → C" 식 사슬을
+  만들지 않는다 (예: "유가 상승이 인플레이션 우려를 키워 기술주에 부담"처럼 그럴듯한
+  경제 논리로 잇는 것). 사슬의 연결고리 하나하나가 뉴스에서 직접 확인될 때만 잇는다.
+- 뉴스가 통념과 반대로 말하면 뉴스를 따른다. 일반적인 경제 상식으로 뉴스에 없는
+  연결을 보충하지 않는다.
+- 근거가 없으면 두 사실을 병렬로 두거나 "직접적 연관은 확인되지 않는다"고 명시한다.
+- ★ 억지 인과는 틀린 정보다. 정직한 병렬이 그럴듯한 거짓 서사보다 낫다. ★
+
+## 반드시 지킬 원칙
 1. 제공된 숫자 데이터와 뉴스 헤드라인에 있는 정보만 사용한다. 숫자를 새로 지어내거나
    추측하지 않는다. 제공되지 않은 수치를 문장에 넣지 않는다.
 2. 어떤 움직임의 근거가 뉴스에서 확인되지 않으면 "관련 뉴스에서 확인되지 않음"이라고
    명시하고, 억지 해석이나 그럴듯한 소설을 만들지 않는다.
 3. 특정 종목의 매수/매도 추천을 절대 하지 않는다. 사실과 맥락만 전달한다.
 4. 반드시 아래 형식의 순수 JSON만 출력한다. 마크다운 코드펜스나 설명 문장을 덧붙이지 않는다.
-
 5. 종목 코멘트는 뉴스 근거가 있거나 등락이 큰 종목 위주로만 작성한다. 움직임이 미미하고
    관련 뉴스도 없는 종목은 생략해도 된다. 전 종목을 억지로 다 쓰지 않는다.
 6. 무버(movers)는 그날 크게 움직인 종목이므로 "왜 움직였나"의 뉴스 근거가 특히 중요하다.
    해당 종목 뉴스에서 원인이 확인되면 연결하고, 확인되지 않으면 반드시
    "급등/급락 원인은 관련 뉴스에서 확인되지 않음"이라고 쓴다. 억지 해석 금지.
+7. policy_comment 는 "연준·정책 뉴스" 섹션에 기사가 있을 때만 작성한다. 연준 발언·금리·
+   재정·관세·경제지표·지정학이 오늘 시장에 준 영향을 2~3문장으로 짚되, 시장 영향과의
+   연결 역시 위 인과 철칙을 따른다. 정책 뉴스가 없으면 빈 문자열("")로 둔다.
 
 출력 JSON 형식:
 {
-  "market_summary": "3~4문장. 오늘 장 전체 분위기 요약 (지수 흐름 + 가장 큰 테마 1~2개)",
+  "market_summary": "4~6문장. 오늘 시장을 관통하는 서사 — 핵심 동인 1~2개를 중심에 놓고 지수·매크로·종목을 흐름으로 연결 (위 서사 원칙 준수)",
   "index_comment": "1~2문장. 지수가 이렇게 움직인 배경 (뉴스 근거)",
   "macro_comment": "1~2문장. 금리·유가·달러·VIX 중 의미있는 움직임 해석. 특히 금리/VIX 하락이 시장에 갖는 의미를 자연스럽게 설명",
+  "policy_comment": "2~3문장. 연준·정책 뉴스가 시장에 준 영향 (정책 뉴스 있을 때만, 없으면 빈 문자열)",
   "crypto_comment": "1문장. 암호화폐 흐름",
-  "key_topics": ["오늘 시장을 움직인 핵심 이슈 3~5개, 각 한 줄"],
+  "key_topics": ["오늘 서사의 핵심 축 3~5개, 각 한 줄. 단순 헤드라인 나열이 아니라 시장을 움직인 축으로"],
   "stock_comments": [
     {"ticker": "NVDA", "name": "엔비디아", "comment": "1~2문장. 이 종목이 왜 이렇게 움직였나. 해당 종목 뉴스에 근거가 있으면 연결하고, 없으면 등락 사실만 담담히 서술"}
   ],
@@ -62,8 +82,8 @@ SYSTEM_PROMPT = """당신은 한국경제TV의 미국 증시 아침 브리핑을
 movers 데이터가 비어 있으면 mover_comments 는 빈 배열로 둔다."""
 
 # 파싱 실패·API 실패 시 반환할 키 구조 (템플릿이 참조하는 키)
-_KEYS = ["market_summary", "index_comment", "macro_comment", "crypto_comment", "key_topics",
-         "stock_comments", "mover_comments"]
+_KEYS = ["market_summary", "index_comment", "macro_comment", "policy_comment", "crypto_comment",
+         "key_topics", "stock_comments", "mover_comments"]
 
 
 def _format_ticker_news(ticker_news: dict[str, list[str]] | None) -> str:
@@ -78,6 +98,18 @@ def _format_ticker_news(ticker_news: dict[str, list[str]] | None) -> str:
     return "\n".join(lines) if lines else "(수집된 종목 뉴스 없음)"
 
 
+def _format_headlines(articles: list[dict] | None, empty_text: str) -> str:
+    """뉴스 기사 목록을 '[출처] 헤드라인' 줄 목록으로 만든다."""
+    if not articles:
+        return empty_text
+    lines = []
+    for i, article in enumerate(articles, 1):
+        headline = article.get("headline", "").strip()
+        source = article.get("source", "")
+        lines.append(f"{i}. [{source}] {headline}")
+    return "\n".join(lines)
+
+
 def _build_user_message(
     market: dict,
     crypto: list[dict],
@@ -86,6 +118,7 @@ def _build_user_message(
     stock_news: dict[str, list[str]] | None = None,
     movers: dict[str, list[dict]] | None = None,
     mover_news: dict[str, list[str]] | None = None,
+    policy_news: list[dict] | None = None,
 ) -> str:
     """숫자 데이터와 뉴스 헤드라인을 정리해 유저 메시지로 만든다."""
     # 숫자 데이터는 JSON 그대로 전달 (Claude가 값을 지어내지 않도록 근거 고정)
@@ -100,22 +133,13 @@ def _build_user_message(
         indent=2,
     )
 
-    # 뉴스는 헤드라인 목록으로 간결하게
-    if news:
-        lines = []
-        for i, article in enumerate(news, 1):
-            headline = article.get("headline", "").strip()
-            source = article.get("source", "")
-            lines.append(f"{i}. [{source}] {headline}")
-        news_block = "\n".join(lines)
-    else:
-        news_block = "(수집된 뉴스 없음)"
-
     return (
         "## 오늘의 시장 숫자 데이터 (JSON)\n"
         f"{numbers}\n\n"
         "## 오늘의 시장 뉴스 헤드라인\n"
-        f"{news_block}\n\n"
+        f"{_format_headlines(news, '(수집된 뉴스 없음)')}\n\n"
+        "## 연준·정책 뉴스 (시장 뉴스에서 정책 키워드로 선별, policy_comment 의 근거)\n"
+        f"{_format_headlines(policy_news, '(오늘 정책 관련 뉴스 없음 → policy_comment 는 빈 문자열)')}\n\n"
         "## 관심 종목별 뉴스 헤드라인\n"
         f"{_format_ticker_news(stock_news)}\n\n"
         "## 시장 무버 종목별 뉴스 헤드라인\n"
@@ -185,8 +209,9 @@ def generate_commentary(
     stock_news: dict[str, list[str]] | None = None,
     movers: dict[str, list[dict]] | None = None,
     mover_news: dict[str, list[str]] | None = None,
+    policy_news: list[dict] | None = None,
 ) -> dict | None:
-    """시장 숫자 + 뉴스(+ 관심 종목·시장 무버와 각 종목 뉴스)로 해설을 생성한다.
+    """시장 숫자 + 뉴스(+ 관심 종목·시장 무버·정책 뉴스)로 서사형 해설을 생성한다.
 
     성공 시 해설 dict, 실패 시 None (파이프라인이 죽지 않도록 fallback).
     """
@@ -201,7 +226,7 @@ def generate_commentary(
         return None
 
     contents = _build_user_message(market, crypto, news, stocks, stock_news,
-                                   movers, mover_news)
+                                   movers, mover_news, policy_news)
     gen_config = types.GenerateContentConfig(
         # 시스템 프롬프트는 Gemini에선 system_instruction 으로 전달
         system_instruction=SYSTEM_PROMPT,
