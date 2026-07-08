@@ -166,6 +166,59 @@ POLICY_KEYWORDS: list[str] = [
 ]
 
 # ---------------------------------------------------------------------------
+# 경제 캘린더 (Nasdaq 무료 경제 이벤트 API)
+# ---------------------------------------------------------------------------
+# Finnhub /calendar/economic 은 유료 전용(2026-07 실측 403), FMP 무료 티어도
+# economic calendar 는 유료 전용(402/403)이라, 무키로 실제/예상/이전을 모두 주는
+# Nasdaq 내부 API 를 사용한다. 비공식 엔드포인트라 브라우저 User-Agent 헤더가 필요하고,
+# 구조 변경·차단 리스크가 있어 수집기에서 모든 호출을 방어적으로 감싼다.
+NASDAQ_CALENDAR_URL: str = "https://api.nasdaq.com/api/calendar/economicevents"
+NASDAQ_HEADERS: dict[str, str] = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+    ),
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+# 조회 대상 국가 (Nasdaq country 필드 값). 미국 지표 위주.
+CALENDAR_COUNTRY: str = "United States"
+# 예정 일정: 기준일 다음 영업일부터 앞으로 N영업일(주말 제외)
+CALENDAR_UPCOMING_BUSINESS_DAYS: int = 5
+# 예정 일정 최대 표시 개수 (너무 길어지지 않도록 상한)
+CALENDAR_UPCOMING_MAX: int = 15
+
+# 중요도 필터 — Nasdaq 은 중요도 등급을 주지 않으므로 이벤트명 키워드 화이트리스트로
+# 시장 영향 큰 지표만 고른다(대소문자 무시 부분 일치). 자잘한 지표(단기채 입찰,
+# CFTC 포지션, Redbook 등)는 여기 없으니 자동 제외된다.
+CALENDAR_KEYWORDS: list[str] = [
+    # 고용
+    "Nonfarm Payrolls", "Unemployment Rate", "Average Hourly Earnings",
+    "ADP Nonfarm Employment Change", "Initial Jobless Claims",
+    "Continuing Jobless Claims", "JOLTS Job Openings", "Challenger Job Cuts",
+    # 물가
+    "CPI", "PCE", "PPI", "Import Price", "Export Price",
+    # 성장·소비·생산
+    "GDP", "Retail Sales", "Durable Goods Orders", "Industrial Production",
+    "Factory Orders", "Personal Income", "Personal Spending",
+    # 심리·PMI
+    "ISM Manufacturing PMI", "ISM Non-Manufacturing PMI", "ISM Services PMI",
+    "S&P Global Manufacturing PMI", "S&P Global Services PMI",
+    "S&P Global Composite PMI", "Michigan Consumer Sentiment",
+    "Michigan Inflation Expectations", "CB Consumer Confidence",
+    "Chicago PMI", "Philadelphia Fed", "Philly Fed", "Empire State",
+    # 주택
+    "Building Permits", "Housing Starts", "New Home Sales",
+    "Existing Home Sales", "Pending Home Sales",
+    # 무역
+    "Trade Balance",
+    # 연준
+    "FOMC", "Fed Interest Rate Decision", "Powell",
+]
+# 위 키워드에 걸려도 노이즈라 버릴 이벤트명 (부분 일치). 예: GDPNow 는 상시 갱신 나우캐스트라 제외.
+CALENDAR_EXCLUDE_KEYWORDS: list[str] = ["GDPNow"]
+
+# ---------------------------------------------------------------------------
 # Gemini 해설
 # ---------------------------------------------------------------------------
 GEMINI_MODEL: str = "gemini-2.5-flash"  # 무료 티어에서 충분히 빠르고 좋음 (2.0-flash는 무료 한도 0)

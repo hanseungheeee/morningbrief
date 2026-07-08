@@ -93,6 +93,32 @@ def _shape_crypto_row(row: dict) -> dict:
     }
 
 
+def _shape_calendar_today(event: dict) -> dict:
+    """오늘 발표된 지표 한 건을 템플릿용 뷰모델로 변환한다. (None 값은 '-' 로)"""
+    return {
+        "name": event.get("name", ""),
+        "actual": event.get("actual") or "-",
+        "consensus": event.get("consensus") or "-",
+        "previous": event.get("previous") or "-",
+        # surprise: above/below/inline/None → 템플릿이 색상·라벨 판단
+        "surprise": event.get("surprise"),
+    }
+
+
+def _shape_calendar_upcoming(event: dict) -> dict:
+    """예정 일정 한 건을 템플릿용 뷰모델로 변환한다. (날짜를 MM/DD(요일)로)"""
+    iso = event.get("date", "")
+    label = iso
+    if len(iso) == 10:  # YYYY-MM-DD → MM/DD
+        label = f"{iso[5:7]}/{iso[8:10]}"
+    weekday = event.get("weekday", "")
+    return {
+        "date": f"{label}({weekday})" if weekday else label,
+        "name": event.get("name", ""),
+        "consensus": event.get("consensus") or "-",
+    }
+
+
 def build_context(payload: dict) -> dict:
     """수집 JSON을 템플릿 렌더링 컨텍스트로 가공한다."""
     market = payload.get("market", {})
@@ -110,6 +136,9 @@ def build_context(payload: dict) -> dict:
         # 시장 무버: 상승/하락 리스트를 각각 같은 뷰모델로
         "mover_gainers": [_shape_crypto_row(r) for r in movers.get("gainers", [])],
         "mover_losers": [_shape_crypto_row(r) for r in movers.get("losers", [])],
+        # 경제 캘린더: 오늘 발표 결과 + 예정 일정
+        "calendar_today": [_shape_calendar_today(e) for e in payload.get("calendar_today", [])],
+        "calendar_upcoming": [_shape_calendar_upcoming(e) for e in payload.get("calendar_upcoming", [])],
         "commentary": commentary,
     }
 

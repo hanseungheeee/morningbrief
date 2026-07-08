@@ -15,6 +15,9 @@
     --text: #1a1a1a;
     --muted: #666;
     --border: #e3e5e9;
+    /* 경제지표 예상 대비: 상회=주황, 하회=청록 (등락 색과 구분해 호/악재 오해 방지) */
+    --sp-above: #c9761d;
+    --sp-below: #2f8f83;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -26,6 +29,8 @@
       --text: #f0f0f2;
       --muted: #9aa0aa;
       --border: #2c3038;
+      --sp-above: #e0913f;
+      --sp-below: #4bb3a5;
     }
   }
   * { box-sizing: border-box; }
@@ -129,6 +134,15 @@
   .stock-comments .ticker-name.up { color: var(--up); }
   .stock-comments .ticker-name.down { color: var(--down); }
 
+  /* 경제지표 예상 대비 배지 */
+  .badge { font-size: 11px; font-weight: 700; margin-left: 6px; white-space: nowrap; }
+  .badge.above { color: var(--sp-above); }
+  .badge.below { color: var(--sp-below); }
+  .badge.inline { color: var(--flat); }
+  /* 예정 일정 날짜 셀 */
+  td.cal-date { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.cal-cons { color: var(--muted); }
+
   /* 무버 상승/하락 소제목 */
   .mover-caption {
     font-size: 12px;
@@ -209,6 +223,52 @@
   <section>
     <h2>연준·정책</h2>
     <div class="comment"><span class="tag">해설</span>{{ commentary.policy_comment }}</div>
+  </section>
+  {% endif %}
+
+  <!-- 경제 지표: 오늘 발표된 결과 (데이터 있을 때만) -->
+  {% if calendar_today %}
+  <section>
+    <h2>오늘의 경제 지표</h2>
+    <table>
+      <thead>
+        <tr><th>지표</th><th>실제</th><th>예상</th><th>이전</th></tr>
+      </thead>
+      <tbody>
+        {% for e in calendar_today %}
+        <tr>
+          <td><span class="name">{{ e.name }}</span></td>
+          <td class="price">{{ e.actual }}{% if e.surprise == 'above' %}<span class="badge above">▲상회</span>{% elif e.surprise == 'below' %}<span class="badge below">▼하회</span>{% elif e.surprise == 'inline' %}<span class="badge inline">부합</span>{% endif %}</td>
+          <td>{{ e.consensus }}</td>
+          <td>{{ e.previous }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if commentary.calendar_comment %}
+    <div class="comment"><span class="tag">해설</span>{{ commentary.calendar_comment }}</div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <!-- 경제 지표: 예정 일정 (데이터 있을 때만, 해설 없이 나열) -->
+  {% if calendar_upcoming %}
+  <section>
+    <h2>예정 일정</h2>
+    <table>
+      <thead>
+        <tr><th>날짜</th><th>지표</th><th>예상</th></tr>
+      </thead>
+      <tbody>
+        {% for e in calendar_upcoming %}
+        <tr>
+          <td class="cal-date">{{ e.date }}</td>
+          <td><span class="name">{{ e.name }}</span></td>
+          <td class="cal-cons">{{ e.consensus }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </section>
   {% endif %}
 
