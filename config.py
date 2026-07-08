@@ -150,6 +150,21 @@ FINNHUB_COMPANY_NEWS_URL: str = "https://finnhub.io/api/v1/company-news"
 STOCK_NEWS_DAYS: int = 2          # 최근 N일 기사만 조회
 STOCK_NEWS_MAX_PER_TICKER: int = 3  # 종목당 상위 N개 헤드라인 (토큰 절약)
 
+# 연준·정책 뉴스 필터 키워드 (대소문자 무시, 헤드라인·요약에서 부분 일치)
+# 수집된 시장 뉴스에서 정책 관련 기사를 따로 골라 해설의 정책 코멘트 근거로 쓴다.
+POLICY_KEYWORDS: list[str] = [
+    # 연준·통화정책
+    "fed", "federal reserve", "powell", "fomc", "rate cut", "rate hike",
+    "interest rate", "monetary policy", "quantitative",
+    # 재무부·재정정책
+    "treasury", "yellen", "bessent", "fiscal", "debt ceiling", "shutdown",
+    # 무역·관세
+    "tariff", "trade war", "sanction", "export control",
+    # 경제지표
+    "inflation", "cpi", "pce", "ppi", "jobs report", "nonfarm", "payroll",
+    "unemployment", "gdp", "recession",
+]
+
 # ---------------------------------------------------------------------------
 # Gemini 해설
 # ---------------------------------------------------------------------------

@@ -1,7 +1,8 @@
-"""Finnhub 시장 뉴스·종목별 뉴스 수집. (출력·저장은 하지 않음)"""
+"""Finnhub 시장 뉴스·종목별 뉴스 수집과 정책 뉴스 필터. (출력·저장은 하지 않음)"""
 
 from __future__ import annotations
 
+import re
 import time
 from datetime import date, timedelta
 
@@ -14,9 +15,16 @@ from config import (
     NEWS_CATEGORIES,
     NEWS_MAX_ITEMS,
     NEWS_RECENT_HOURS,
+    POLICY_KEYWORDS,
     STOCK_NEWS_DAYS,
     STOCK_NEWS_MAX_PER_TICKER,
     WATCH_TICKERS,
+)
+
+# 정책 키워드를 단어 경계 정규식으로 컴파일 ("fed"가 confederate 등에 걸리지 않게)
+_POLICY_PATTERN = re.compile(
+    r"\b(" + "|".join(re.escape(k) for k in POLICY_KEYWORDS) + r")\b",
+    re.IGNORECASE,
 )
 
 
@@ -123,3 +131,17 @@ def collect_stock_news(symbols: list[str] | None = None) -> dict[str, list[str]]
                 break
         result[symbol] = headlines
     return result
+
+
+def filter_policy_news(news: list[dict]) -> list[dict]:
+    """수집된 시장 뉴스에서 연준·정책 관련 기사만 골라낸다.
+
+    추가 API 호출 없이 이미 수집한 뉴스(headline·summary)를 키워드로 거른다.
+    기존 뉴스 목록은 그대로 두고 별도 리스트를 반환하며, 해당 기사가 없으면 빈 리스트.
+    """
+    matched: list[dict] = []
+    for article in news:
+        text = f"{article.get('headline', '')} {article.get('summary', '')}"
+        if _POLICY_PATTERN.search(text):
+            matched.append(article)
+    return matched

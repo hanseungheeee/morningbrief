@@ -204,6 +204,14 @@
     {% endif %}
   </section>
 
+  <!-- 연준·정책 해설 (정책 뉴스가 있는 날만) -->
+  {% if commentary.policy_comment %}
+  <section>
+    <h2>연준·정책</h2>
+    <div class="comment"><span class="tag">해설</span>{{ commentary.policy_comment }}</div>
+  </section>
+  {% endif %}
+
   <!-- 섹션3: 암호화폐 -->
   <section>
     <h2>암호화폐 (USD)</h2>
