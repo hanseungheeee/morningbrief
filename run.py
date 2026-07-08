@@ -10,7 +10,8 @@ from config import DATA_DIR
 from src.analysis.commentary import generate_commentary
 from src.collectors.crypto import collect_crypto
 from src.collectors.market import collect_indices, collect_macros
-from src.collectors.news import collect_news
+from src.collectors.news import collect_news, collect_stock_news
+from src.collectors.stocks import collect_stocks
 from src.notify.telegram import send_notification
 from src.render.builder import render
 
@@ -21,13 +22,20 @@ RESET = "\033[0m"
 
 
 def collect_all(with_commentary: bool = True) -> dict:
-    """수집(시장+암호화폐) → 뉴스 수집 → Claude 해설 → 하나의 dict로 묶는다."""
+    """수집(시장+암호화폐+종목) → 뉴스 수집 → Claude 해설 → 하나의 dict로 묶는다."""
     now = datetime.now()
     market = {
         "indices": collect_indices(),
         "macros": collect_macros(),
     }
     crypto = collect_crypto()
+
+    # 관심 종목 등락 수집 (실패해도 파이프라인은 계속)
+    try:
+        stocks = collect_stocks()
+    except Exception as exc:
+        print(f"[경고] 종목 수집 단계 실패: {exc}")
+        stocks = []
 
     # 뉴스 수집 (실패해도 파이프라인은 계속)
     try:
@@ -36,18 +44,27 @@ def collect_all(with_commentary: bool = True) -> dict:
         print(f"[경고] 뉴스 수집 단계 실패: {exc}")
         news = []
 
+    # 종목별 뉴스 수집 (실패해도 파이프라인은 계속)
+    try:
+        stock_news = collect_stock_news()
+    except Exception as exc:
+        print(f"[경고] 종목 뉴스 수집 단계 실패: {exc}")
+        stock_news = {}
+
     # Claude 해설 (--no-commentary 면 건너뜀, 실패 시 None)
     commentary = None
     if with_commentary:
-        commentary = generate_commentary(market, crypto, news)
+        commentary = generate_commentary(market, crypto, news, stocks, stock_news)
 
     return {
         "date": now.strftime("%Y-%m-%d"),
         "collected_at": now.strftime("%Y-%m-%d %H:%M:%S"),
         "market": market,
         "crypto": crypto,
+        "stocks": stocks,
         "news": news,
-        "commentary": commentary,
+        "stock_news": stock_news,
+        "commentary": commentary,  # 종목 코멘트는 commentary.stock_comments 에 포함
     }
 
 
@@ -105,6 +122,7 @@ def print_report(payload: dict) -> None:
     _print_section("지수", payload["market"]["indices"], with_points=True)
     _print_section("매크로", payload["market"]["macros"], with_points=True)
     _print_section("암호화폐 (USD)", payload["crypto"], with_points=False)
+    _print_section("주요 종목", payload.get("stocks", []), with_points=True)
     print()
 
 
