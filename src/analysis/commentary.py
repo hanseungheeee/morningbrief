@@ -41,6 +41,9 @@ SYSTEM_PROMPT = """당신은 한국경제TV의 미국 증시 아침 브리핑을
 
 5. 종목 코멘트는 뉴스 근거가 있거나 등락이 큰 종목 위주로만 작성한다. 움직임이 미미하고
    관련 뉴스도 없는 종목은 생략해도 된다. 전 종목을 억지로 다 쓰지 않는다.
+6. 무버(movers)는 그날 크게 움직인 종목이므로 "왜 움직였나"의 뉴스 근거가 특히 중요하다.
+   해당 종목 뉴스에서 원인이 확인되면 연결하고, 확인되지 않으면 반드시
+   "급등/급락 원인은 관련 뉴스에서 확인되지 않음"이라고 쓴다. 억지 해석 금지.
 
 출력 JSON 형식:
 {
@@ -51,12 +54,28 @@ SYSTEM_PROMPT = """당신은 한국경제TV의 미국 증시 아침 브리핑을
   "key_topics": ["오늘 시장을 움직인 핵심 이슈 3~5개, 각 한 줄"],
   "stock_comments": [
     {"ticker": "NVDA", "name": "엔비디아", "comment": "1~2문장. 이 종목이 왜 이렇게 움직였나. 해당 종목 뉴스에 근거가 있으면 연결하고, 없으면 등락 사실만 담담히 서술"}
+  ],
+  "mover_comments": [
+    {"ticker": "...", "name": "...", "direction": "up 또는 down", "comment": "1~2문장. 왜 이렇게 크게 움직였나. 뉴스 근거 필수, 근거 없으면 '급등/급락 원인은 관련 뉴스에서 확인되지 않음'"}
   ]
-}"""
+}
+movers 데이터가 비어 있으면 mover_comments 는 빈 배열로 둔다."""
 
 # 파싱 실패·API 실패 시 반환할 키 구조 (템플릿이 참조하는 키)
 _KEYS = ["market_summary", "index_comment", "macro_comment", "crypto_comment", "key_topics",
-         "stock_comments"]
+         "stock_comments", "mover_comments"]
+
+
+def _format_ticker_news(ticker_news: dict[str, list[str]] | None) -> str:
+    """{티커: [헤드라인들]} 을 티커 단위 목록 텍스트로 만든다. (근거를 종목별로 고정)"""
+    lines: list[str] = []
+    for ticker, headlines in (ticker_news or {}).items():
+        if headlines:
+            lines.append(f"- {ticker}:")
+            lines.extend(f"  - {h}" for h in headlines)
+        else:
+            lines.append(f"- {ticker}: (뉴스 없음)")
+    return "\n".join(lines) if lines else "(수집된 종목 뉴스 없음)"
 
 
 def _build_user_message(
@@ -65,11 +84,18 @@ def _build_user_message(
     news: list[dict],
     stocks: list[dict] | None = None,
     stock_news: dict[str, list[str]] | None = None,
+    movers: dict[str, list[dict]] | None = None,
+    mover_news: dict[str, list[str]] | None = None,
 ) -> str:
     """숫자 데이터와 뉴스 헤드라인을 정리해 유저 메시지로 만든다."""
     # 숫자 데이터는 JSON 그대로 전달 (Claude가 값을 지어내지 않도록 근거 고정)
     numbers = json.dumps(
-        {"market": market, "crypto": crypto, "stocks": stocks or []},
+        {
+            "market": market,
+            "crypto": crypto,
+            "stocks": stocks or [],
+            "movers": movers or {"gainers": [], "losers": []},
+        },
         ensure_ascii=False,
         indent=2,
     )
@@ -85,25 +111,18 @@ def _build_user_message(
     else:
         news_block = "(수집된 뉴스 없음)"
 
-    # 종목별 뉴스는 티커 단위로 묶어서 (코멘트의 근거를 종목별로 고정)
-    stock_news_lines: list[str] = []
-    for ticker, headlines in (stock_news or {}).items():
-        if headlines:
-            stock_news_lines.append(f"- {ticker}:")
-            stock_news_lines.extend(f"  - {h}" for h in headlines)
-        else:
-            stock_news_lines.append(f"- {ticker}: (뉴스 없음)")
-    stock_news_block = "\n".join(stock_news_lines) if stock_news_lines else "(수집된 종목 뉴스 없음)"
-
     return (
         "## 오늘의 시장 숫자 데이터 (JSON)\n"
         f"{numbers}\n\n"
         "## 오늘의 시장 뉴스 헤드라인\n"
         f"{news_block}\n\n"
         "## 관심 종목별 뉴스 헤드라인\n"
-        f"{stock_news_block}\n\n"
+        f"{_format_ticker_news(stock_news)}\n\n"
+        "## 시장 무버 종목별 뉴스 헤드라인\n"
+        f"{_format_ticker_news(mover_news)}\n\n"
         "위 숫자와 뉴스만 근거로, 지정된 JSON 형식의 해설을 작성하세요. "
-        "stock_comments 는 위 stocks 데이터에 있는 종목만 대상으로 하세요."
+        "stock_comments 는 위 stocks 데이터, mover_comments 는 위 movers 데이터에 있는 "
+        "종목만 대상으로 하세요."
     )
 
 
@@ -142,14 +161,32 @@ def _shape_stock_comments(value: object) -> list[dict]:
     return shaped
 
 
+def _shape_mover_comments(value: object) -> list[dict]:
+    """mover_comments 응답을 검증해 정규화한다. direction 은 up/down 만 허용."""
+    shaped: list[dict] = []
+    for item in _shape_stock_comments(value):  # ticker/name/comment 검증은 동일
+        direction = None
+        if isinstance(value, list):
+            # _shape_stock_comments 가 버린 항목이 있을 수 있어 티커로 원본을 찾는다
+            for raw in value:
+                if isinstance(raw, dict) and raw.get("ticker") == item["ticker"]:
+                    direction = raw.get("direction")
+                    break
+        item["direction"] = direction if direction in ("up", "down") else "flat"
+        shaped.append(item)
+    return shaped
+
+
 def generate_commentary(
     market: dict,
     crypto: list[dict],
     news: list[dict],
     stocks: list[dict] | None = None,
     stock_news: dict[str, list[str]] | None = None,
+    movers: dict[str, list[dict]] | None = None,
+    mover_news: dict[str, list[str]] | None = None,
 ) -> dict | None:
-    """시장 숫자 + 뉴스(+ 관심 종목 등락·종목 뉴스)로 해설을 생성한다.
+    """시장 숫자 + 뉴스(+ 관심 종목·시장 무버와 각 종목 뉴스)로 해설을 생성한다.
 
     성공 시 해설 dict, 실패 시 None (파이프라인이 죽지 않도록 fallback).
     """
@@ -163,7 +200,8 @@ def generate_commentary(
         print(f"[경고] Gemini 클라이언트 초기화 실패: {exc}")
         return None
 
-    contents = _build_user_message(market, crypto, news, stocks, stock_news)
+    contents = _build_user_message(market, crypto, news, stocks, stock_news,
+                                   movers, mover_news)
     gen_config = types.GenerateContentConfig(
         # 시스템 프롬프트는 Gemini에선 system_instruction 으로 전달
         system_instruction=SYSTEM_PROMPT,
@@ -205,7 +243,7 @@ def generate_commentary(
         print(f"[경고] Gemini 응답 JSON 파싱 실패: {exc}")
         return None
 
-    # 기대 키만 추려서 반환 (key_topics·stock_comments 는 리스트로 정규화)
+    # 기대 키만 추려서 반환 (key_topics·stock_comments·mover_comments 는 리스트로 정규화)
     result: dict = {}
     for key in _KEYS:
         value = parsed.get(key)
@@ -213,6 +251,8 @@ def generate_commentary(
             result[key] = value if isinstance(value, list) else []
         elif key == "stock_comments":
             result[key] = _shape_stock_comments(value)
+        elif key == "mover_comments":
+            result[key] = _shape_mover_comments(value)
         else:
             result[key] = value if isinstance(value, str) else ""
     return result

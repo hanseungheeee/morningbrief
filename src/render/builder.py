@@ -96,6 +96,7 @@ def _shape_crypto_row(row: dict) -> dict:
 def build_context(payload: dict) -> dict:
     """수집 JSON을 템플릿 렌더링 컨텍스트로 가공한다."""
     market = payload.get("market", {})
+    movers = payload.get("movers") or {}
     # 해설은 있으면 그대로, 없으면(None) 빈 dict → 템플릿이 블록을 숨김
     commentary = payload.get("commentary") or {}
     return {
@@ -106,6 +107,9 @@ def build_context(payload: dict) -> dict:
         "crypto": [_shape_crypto_row(r) for r in payload.get("crypto", [])],
         # 관심 종목: 표시 항목이 암호화폐와 같아(이름·현재가·등락률) 같은 뷰모델을 쓴다
         "stocks": [_shape_crypto_row(r) for r in payload.get("stocks", [])],
+        # 시장 무버: 상승/하락 리스트를 각각 같은 뷰모델로
+        "mover_gainers": [_shape_crypto_row(r) for r in movers.get("gainers", [])],
+        "mover_losers": [_shape_crypto_row(r) for r in movers.get("losers", [])],
         "commentary": commentary,
     }
 

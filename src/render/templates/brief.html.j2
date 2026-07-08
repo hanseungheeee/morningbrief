@@ -126,6 +126,16 @@
     margin: 4px 0;
   }
   .stock-comments .ticker-name { font-weight: 700; color: var(--text); }
+  .stock-comments .ticker-name.up { color: var(--up); }
+  .stock-comments .ticker-name.down { color: var(--down); }
+
+  /* 무버 상승/하락 소제목 */
+  .mover-caption {
+    font-size: 12px;
+    font-weight: 700;
+    margin: 12px 0 6px;
+  }
+  .mover-caption:first-of-type { margin-top: 0; }
 
   footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 24px; }
 </style>
@@ -238,6 +248,54 @@
     <ul class="stock-comments">
       {% for sc in commentary.stock_comments %}
       <li><span class="ticker-name">{{ sc.name }}</span> — {{ sc.comment }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <!-- 섹션5: 오늘의 무버 (데이터 있을 때만) -->
+  {% if mover_gainers or mover_losers %}
+  <section>
+    <h2>오늘의 무버</h2>
+    {% if mover_gainers %}
+    <div class="mover-caption up">상승</div>
+    <table>
+      <thead>
+        <tr><th>종목명</th><th>현재가</th><th>등락률</th></tr>
+      </thead>
+      <tbody>
+        {% for row in mover_gainers %}
+        <tr>
+          <td><span class="name">{{ row.name }}</span></td>
+          <td class="price">{{ row.price }}</td>
+          <td class="{{ row.direction }}">{{ row.change_pct }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    {% if mover_losers %}
+    <div class="mover-caption down">하락</div>
+    <table>
+      <thead>
+        <tr><th>종목명</th><th>현재가</th><th>등락률</th></tr>
+      </thead>
+      <tbody>
+        {% for row in mover_losers %}
+        <tr>
+          <td><span class="name">{{ row.name }}</span></td>
+          <td class="price">{{ row.price }}</td>
+          <td class="{{ row.direction }}">{{ row.change_pct }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    {% if commentary.mover_comments %}
+    <ul class="stock-comments">
+      {% for mc in commentary.mover_comments %}
+      <li><span class="ticker-name {{ mc.direction }}">{{ mc.name }}</span> — {{ mc.comment }}</li>
       {% endfor %}
     </ul>
     {% endif %}

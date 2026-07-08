@@ -98,9 +98,10 @@ def _fetch_company_news(symbol: str) -> list[dict]:
         return []
 
 
-def collect_stock_news() -> dict[str, list[str]]:
-    """관심 종목별 최근 뉴스 헤드라인을 수집한다.
+def collect_stock_news(symbols: list[str] | None = None) -> dict[str, list[str]]:
+    """종목별 최근 뉴스 헤드라인을 수집한다.
 
+    symbols=None 이면 관심 종목(WATCH_TICKERS) 전체. 무버 등 임의 종목 리스트에도 재활용.
     반환: {티커: [헤드라인, ...]} — 종목당 최신순 상위 N개, 뉴스 없으면 빈 리스트.
     """
     if not FINNHUB_API_KEY:
@@ -109,7 +110,7 @@ def collect_stock_news() -> dict[str, list[str]]:
         )
 
     result: dict[str, list[str]] = {}
-    for symbol in WATCH_TICKERS:
+    for symbol in (symbols if symbols is not None else list(WATCH_TICKERS)):
         items = _fetch_company_news(symbol)
         # 최신순 정렬 후 상위 N개 헤드라인만 (토큰 절약)
         items.sort(key=lambda a: a.get("datetime", 0), reverse=True)
