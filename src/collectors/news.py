@@ -12,12 +12,15 @@ from config import (
     FINNHUB_API_KEY,
     FINNHUB_COMPANY_NEWS_URL,
     FINNHUB_NEWS_URL,
+    MARKET_CROSS_MAX_PER_TICKER,
     NEWS_CATEGORIES,
     NEWS_MAX_ITEMS,
     NEWS_RECENT_HOURS,
     POLICY_KEYWORDS,
     STOCK_NEWS_DAYS,
     STOCK_NEWS_MAX_PER_TICKER,
+    STOCK_NEWS_SUMMARY_MAX_CHARS,
+    TICKER_MATCH_NAMES,
     WATCH_TICKERS,
 )
 
@@ -26,6 +29,10 @@ _POLICY_PATTERN = re.compile(
     r"\b(" + "|".join(re.escape(k) for k in POLICY_KEYWORDS) + r")\b",
     re.IGNORECASE,
 )
+
+# 일부 뉴스 summary 에는 원본 HTML 태그(<p class=...> 등)가 섞여 온다. Gemini 로
+# 넘기기 전에 태그를 벗기고 텍스트만 남긴다(노이즈·토큰 낭비 방지).
+_HTML_TAG_PATTERN = re.compile(r"<[^>]+>")
 
 
 def _fetch_category(category: str) -> list[dict]:
@@ -83,10 +90,10 @@ def collect_news() -> list[dict]:
     return articles[:NEWS_MAX_ITEMS]
 
 
-def _fetch_company_news(symbol: str) -> list[dict]:
-    """종목 하나의 최근 뉴스를 조회한다. 실패 시 빈 리스트."""
+def _fetch_company_news(symbol: str, days: int) -> list[dict]:
+    """종목 하나의 최근 days 일 뉴스를 조회한다. 실패 시 빈 리스트."""
     today = date.today()
-    since = today - timedelta(days=STOCK_NEWS_DAYS)
+    since = today - timedelta(days=days)
     try:
         resp = requests.get(
             FINNHUB_COMPANY_NEWS_URL,
@@ -106,31 +113,124 @@ def _fetch_company_news(symbol: str) -> list[dict]:
         return []
 
 
-def collect_stock_news(symbols: list[str] | None = None) -> dict[str, list[str]]:
-    """종목별 최근 뉴스 헤드라인을 수집한다.
+def _trim_summary(text: str) -> str:
+    """뉴스 요약을 토큰 관리를 위해 STOCK_NEWS_SUMMARY_MAX_CHARS 로 자른다.
 
-    symbols=None 이면 관심 종목(WATCH_TICKERS) 전체. 무버 등 임의 종목 리스트에도 재활용.
-    반환: {티커: [헤드라인, ...]} — 종목당 최신순 상위 N개, 뉴스 없으면 빈 리스트.
+    잘릴 때는 마지막 공백에서 끊고 '…' 를 붙여 단어가 반쪽 나지 않게 한다.
+    """
+    text = _HTML_TAG_PATTERN.sub(" ", text or "")  # HTML 태그 제거
+    text = " ".join(text.split())  # 개행·중복 공백 정리
+    if len(text) <= STOCK_NEWS_SUMMARY_MAX_CHARS:
+        return text
+    cut = text[:STOCK_NEWS_SUMMARY_MAX_CHARS]
+    space = cut.rfind(" ")
+    if space > STOCK_NEWS_SUMMARY_MAX_CHARS * 0.6:  # 너무 짧게 잘리지 않을 때만 공백 기준
+        cut = cut[:space]
+    return cut.rstrip() + "…"
+
+
+def collect_stock_news(
+    symbols: list[str] | None = None,
+    max_per_ticker: int = STOCK_NEWS_MAX_PER_TICKER,
+    days: int = STOCK_NEWS_DAYS,
+) -> dict[str, list[dict]]:
+    """종목별 최근 뉴스를 헤드라인 + 요약(summary)으로 수집한다.
+
+    symbols=None 이면 관심 종목(WATCH_TICKERS) 전체. 무버 등 임의 종목 리스트에도 재활용
+    (무버는 근거 확보가 더 중요해 max_per_ticker 를 크게 넘겨 호출한다).
+    반환: {티커: [{headline, summary, from_market:False}, ...]} — 종목당 최신순 상위 N개.
+          뉴스 없으면 빈 리스트. summary 는 헤드라인의 "왜"를 담는 경우가 많아 함께 넘긴다.
     """
     if not FINNHUB_API_KEY:
         raise RuntimeError(
             "FINNHUB_API_KEY 가 없습니다. .env 에 키를 추가하세요. (.env.example 참고)"
         )
 
-    result: dict[str, list[str]] = {}
+    result: dict[str, list[dict]] = {}
     for symbol in (symbols if symbols is not None else list(WATCH_TICKERS)):
-        items = _fetch_company_news(symbol)
-        # 최신순 정렬 후 상위 N개 헤드라인만 (토큰 절약)
+        items = _fetch_company_news(symbol, days)
+        # 최신순 정렬 후 상위 N개 (headline + summary)
         items.sort(key=lambda a: a.get("datetime", 0), reverse=True)
-        headlines: list[str] = []
+        collected: list[dict] = []
+        seen_headlines: set[str] = set()
         for item in items:
             headline = (item.get("headline") or "").strip()
-            if headline and headline not in headlines:  # 동일 헤드라인 중복 제거
-                headlines.append(headline)
-            if len(headlines) >= STOCK_NEWS_MAX_PER_TICKER:
+            if not headline or headline in seen_headlines:  # 동일 헤드라인 중복 제거
+                continue
+            seen_headlines.add(headline)
+            collected.append({
+                "headline": headline,
+                "summary": _trim_summary(item.get("summary") or ""),
+                "from_market": False,  # 개별 company-news 근거
+            })
+            if len(collected) >= max_per_ticker:
                 break
-        result[symbol] = headlines
+        result[symbol] = collected
     return result
+
+
+def _compile_ticker_matchers() -> dict[str, tuple]:
+    """티커별 (티커기호 정규식|None, 회사명 정규식|None) 을 미리 컴파일한다.
+
+    둘 다 대소문자를 구분한다. 뉴스에서 회사·티커는 고유명사라 대문자로 표기되므로,
+    대소문자를 구분하면 소문자 일반어 오탐을 막는다. (예: 'Target'(타깃)이 이란 기사
+    본문의 소문자 동사 'target'에 붙거나, 'Arm'(Arm홀딩스)이 'arm'(팔)에 붙는 것 방지.)
+    - 티커 기호: 길이 3+ 만 매칭(V·F·GM 등 1~2글자는 오탐이 커 제외, 회사명으로만 잡는다).
+    - 회사명: TICKER_MATCH_NAMES 의 영문 별칭을 표기 그대로(대문자 시작) 단어 경계 매칭.
+    """
+    matchers: dict[str, tuple] = {}
+    for ticker, names in TICKER_MATCH_NAMES.items():
+        sym_re = None
+        if len(ticker) >= 3:
+            sym_re = re.compile(r"\b" + re.escape(ticker) + r"\b")  # 대소문자 구분
+        name_re = None
+        if names:
+            # 대소문자 구분: 별칭은 이미 'Exxon'·'Target'처럼 고유명사 표기라
+            # 소문자 동사·일반어(target/arm/booking 등)에는 걸리지 않는다.
+            name_re = re.compile(r"\b(" + "|".join(re.escape(n) for n in names) + r")\b")
+        matchers[ticker] = (sym_re, name_re)
+    return matchers
+
+
+def augment_ticker_news_with_market(
+    ticker_news: dict[str, list[dict]],
+    market_news: list[dict],
+    max_per_ticker: int = MARKET_CROSS_MAX_PER_TICKER,
+) -> dict[str, list[dict]]:
+    """개별 종목 뉴스에, 그날 시장 전체 뉴스에서 그 종목이 언급된 기사를 보강한다.
+
+    개별 company-news 에 근거가 없어도 "반도체 섹터 하락" 같은 시장 뉴스에 종목이
+    언급되면 그것도 근거가 된다. 티커(길이 3+)와 영문 회사명 양쪽으로 매칭하고,
+    이미 있는 헤드라인과 중복되면 건너뛴다. 종목당 최대 max_per_ticker 개만 추가.
+    입력 dict 를 제자리에서 보강해 반환한다(억지 인과는 프롬프트 원칙으로 별도 방지).
+    """
+    if not market_news:
+        return ticker_news
+
+    matchers = _compile_ticker_matchers()
+    for ticker, items in ticker_news.items():
+        sym_re, name_re = matchers.get(ticker, (None, None))
+        if sym_re is None and name_re is None:  # 매칭할 이름이 없으면 보강 불가
+            continue
+        existing = {i["headline"].lower() for i in items}
+        added = 0
+        for article in market_news:
+            if added >= max_per_ticker:
+                break
+            headline = (article.get("headline") or "").strip()
+            if not headline or headline.lower() in existing:
+                continue
+            # HTML 태그를 벗긴 텍스트로 매칭 (태그 속성값 오탐 방지)
+            text = _HTML_TAG_PATTERN.sub(" ", f"{headline} {article.get('summary') or ''}")
+            if (sym_re and sym_re.search(text)) or (name_re and name_re.search(text)):
+                items.append({
+                    "headline": headline,
+                    "summary": _trim_summary(article.get("summary") or ""),
+                    "from_market": True,  # 시장 뉴스 교차검색으로 보강한 근거
+                })
+                existing.add(headline.lower())
+                added += 1
+    return ticker_news
 
 
 def filter_policy_news(news: list[dict]) -> list[dict]:

@@ -6,13 +6,18 @@ import argparse
 import json
 from datetime import datetime
 
-from config import DATA_DIR
+from config import DATA_DIR, MOVER_NEWS_MAX_PER_TICKER
 from src.analysis.commentary import generate_commentary
 from src.collectors.calendar import collect_calendar
 from src.collectors.crypto import collect_crypto
 from src.collectors.market import collect_indices, collect_macros
 from src.collectors.movers import collect_movers
-from src.collectors.news import collect_news, collect_stock_news, filter_policy_news
+from src.collectors.news import (
+    augment_ticker_news_with_market,
+    collect_news,
+    collect_stock_news,
+    filter_policy_news,
+)
 from src.collectors.stocks import collect_stocks
 from src.notify.telegram import send_notification
 from src.render.builder import render
@@ -67,13 +72,24 @@ def collect_all(with_commentary: bool = True) -> dict:
         print(f"[경고] 종목 뉴스 수집 단계 실패: {exc}")
         stock_news = {}
 
-    # 무버 종목 뉴스 수집 (실패해도 파이프라인은 계속)
+    # 무버 종목 뉴스 수집 (등락 이유가 중요하므로 종목당 더 넉넉히, 실패해도 계속)
     try:
         mover_tickers = [m["ticker"] for m in movers["gainers"] + movers["losers"]]
-        mover_news = collect_stock_news(mover_tickers) if mover_tickers else {}
+        mover_news = (
+            collect_stock_news(mover_tickers, max_per_ticker=MOVER_NEWS_MAX_PER_TICKER)
+            if mover_tickers else {}
+        )
     except Exception as exc:
         print(f"[경고] 무버 뉴스 수집 단계 실패: {exc}")
         mover_news = {}
+
+    # 시장 전체 뉴스 교차검색으로 종목·무버 뉴스 보강 (개별 뉴스에 없어도 시장 뉴스에
+    # 종목이 언급되면 근거로 추가). 추가 API 호출 없음, 실패해도 계속.
+    try:
+        augment_ticker_news_with_market(stock_news, news)
+        augment_ticker_news_with_market(mover_news, news)
+    except Exception as exc:
+        print(f"[경고] 시장 뉴스 교차검색 보강 실패: {exc}")
 
     # 경제 캘린더 수집 (오늘 발표 지표 + 예정 일정, 실패해도 파이프라인은 계속)
     try:

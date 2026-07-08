@@ -110,6 +110,70 @@ MOVER_UNIVERSE: dict[str, str] = {
 MOVERS_TOP_N: int = 3
 
 # ---------------------------------------------------------------------------
+# 종목 → 영문 회사명 별칭 (시장 뉴스 교차검색용)
+# ---------------------------------------------------------------------------
+# 개별 company-news 에 근거가 없어도 그날 시장 전체 뉴스(general)에 종목이 언급된
+# 경우를 놓치지 않으려고, 헤드라인·요약에서 이 영문 명칭들을 부분 일치로 찾는다.
+# 티커 자체(길이 3+)도 코드에서 함께 매칭하므로 여기엔 사람이 쓰는 회사명만 둔다.
+# (V·F·T·GM 같은 1~2글자 티커는 오탐이 커 티커 매칭에서 제외되고 이 이름으로만 잡힌다.)
+TICKER_MATCH_NAMES: dict[str, list[str]] = {
+    # 빅테크·반도체(관심주)
+    "NVDA": ["Nvidia"], "AAPL": ["Apple"], "MSFT": ["Microsoft"],
+    "GOOGL": ["Google", "Alphabet"], "AMZN": ["Amazon"], "META": ["Meta", "Facebook"],
+    "TSLA": ["Tesla"], "TSM": ["TSMC", "Taiwan Semiconductor"], "AVGO": ["Broadcom"],
+    "MU": ["Micron"],
+    # 금융
+    "JPM": ["JPMorgan", "JP Morgan"], "V": ["Visa"], "MA": ["Mastercard"],
+    "BAC": ["Bank of America", "BofA"], "WFC": ["Wells Fargo"], "GS": ["Goldman Sachs"],
+    "MS": ["Morgan Stanley"], "BLK": ["BlackRock"], "SCHW": ["Charles Schwab", "Schwab"],
+    "C": ["Citigroup", "Citibank"], "AXP": ["American Express", "Amex"],
+    "SPGI": ["S&P Global"], "PYPL": ["PayPal"], "COIN": ["Coinbase"],
+    "HOOD": ["Robinhood"], "SOFI": ["SoFi"],
+    # 헬스케어
+    "LLY": ["Eli Lilly", "Lilly"], "UNH": ["UnitedHealth"],
+    "JNJ": ["Johnson & Johnson"], "PFE": ["Pfizer"], "MRK": ["Merck"],
+    "ABBV": ["AbbVie"], "ABT": ["Abbott"], "TMO": ["Thermo Fisher"],
+    "BMY": ["Bristol Myers", "Bristol-Myers"], "GILD": ["Gilead"], "AMGN": ["Amgen"],
+    "REGN": ["Regeneron"], "VRTX": ["Vertex"], "ISRG": ["Intuitive Surgical"],
+    "MDT": ["Medtronic"],
+    # 소비재·유통
+    "WMT": ["Walmart"], "PG": ["Procter & Gamble", "P&G"], "KO": ["Coca-Cola", "Coca Cola"],
+    "PEP": ["PepsiCo", "Pepsi"], "COST": ["Costco"], "HD": ["Home Depot"],
+    "LOW": ["Lowe's", "Lowes"], "TGT": ["Target"], "NKE": ["Nike"],
+    "MCD": ["McDonald's", "McDonalds"], "SBUX": ["Starbucks"], "CMG": ["Chipotle"],
+    "DPZ": ["Domino's", "Dominos"], "YUM": ["Yum Brands"], "TJX": ["TJX"],
+    "DIS": ["Disney"],
+    # 소프트웨어·IT서비스
+    "ORCL": ["Oracle"], "CRM": ["Salesforce"], "ADBE": ["Adobe"], "NFLX": ["Netflix"],
+    "INTU": ["Intuit"], "NOW": ["ServiceNow"], "IBM": ["IBM"], "CSCO": ["Cisco"],
+    "PLTR": ["Palantir"], "SNOW": ["Snowflake"], "CRWD": ["CrowdStrike"],
+    "PANW": ["Palo Alto"], "FTNT": ["Fortinet"], "ZS": ["Zscaler"],
+    "DDOG": ["Datadog"], "NET": ["Cloudflare"], "SHOP": ["Shopify"],
+    # 반도체·하드웨어
+    "AMD": ["AMD", "Advanced Micro"], "INTC": ["Intel"], "QCOM": ["Qualcomm"],
+    "TXN": ["Texas Instruments"], "AMAT": ["Applied Materials"], "LRCX": ["Lam Research"],
+    "KLAC": ["KLA"], "MRVL": ["Marvell"], "ANET": ["Arista"], "SNPS": ["Synopsys"],
+    "CDNS": ["Cadence"], "ARM": ["Arm Holdings"],
+    # 플랫폼·모빌리티
+    "UBER": ["Uber"], "ABNB": ["Airbnb"], "DASH": ["DoorDash"], "BKNG": ["Booking"],
+    "EXPE": ["Expedia"], "RBLX": ["Roblox"], "MAR": ["Marriott"], "HLT": ["Hilton"],
+    # 자동차·산업재
+    "F": ["Ford"], "GM": ["General Motors"], "RIVN": ["Rivian"], "LCID": ["Lucid"],
+    "BA": ["Boeing"], "LMT": ["Lockheed"], "RTX": ["RTX", "Raytheon"],
+    "NOC": ["Northrop"], "GD": ["General Dynamics"], "DE": ["Deere", "John Deere"],
+    "CAT": ["Caterpillar"], "HON": ["Honeywell"], "GE": ["GE Aerospace"],
+    "MMM": ["3M"], "UPS": ["UPS"], "FDX": ["FedEx"], "DAL": ["Delta Air"],
+    "UAL": ["United Airlines"], "AAL": ["American Airlines"],
+    # 에너지·소재·유틸리티
+    "XOM": ["Exxon", "ExxonMobil"], "CVX": ["Chevron"], "COP": ["ConocoPhillips"],
+    "SLB": ["SLB", "Schlumberger"], "OXY": ["Occidental"], "FCX": ["Freeport"],
+    "NEM": ["Newmont"], "LIN": ["Linde"], "NEE": ["NextEra"],
+    "SO": ["Southern Company"], "DUK": ["Duke Energy"],
+    # 통신
+    "T": ["AT&T"], "VZ": ["Verizon"], "TMUS": ["T-Mobile"], "CMCSA": ["Comcast"],
+}
+
+# ---------------------------------------------------------------------------
 # 암호화폐 (CoinGecko id → 한글 표시명)
 # ---------------------------------------------------------------------------
 CRYPTO_COINS: dict[str, str] = {
@@ -147,8 +211,16 @@ NEWS_MAX_ITEMS: int = 30     # Claude 입력 토큰 절약을 위해 상위 N개
 
 # 종목별 뉴스 (Finnhub company-news)
 FINNHUB_COMPANY_NEWS_URL: str = "https://finnhub.io/api/v1/company-news"
-STOCK_NEWS_DAYS: int = 2          # 최근 N일 기사만 조회
-STOCK_NEWS_MAX_PER_TICKER: int = 3  # 종목당 상위 N개 헤드라인 (토큰 절약)
+STOCK_NEWS_DAYS: int = 3            # 최근 N일 기사만 조회 (2→3: 근거 확보율↑)
+STOCK_NEWS_MAX_PER_TICKER: int = 5   # 관심주 종목당 상위 N개 (3→5)
+# 무버(크게 움직인 종목)는 "왜"가 더 중요하므로 뉴스를 더 넉넉히 준다.
+MOVER_NEWS_MAX_PER_TICKER: int = 7
+# 뉴스 summary(요약)도 함께 넘기되, 토큰 관리를 위해 이 길이로 자른다.
+# (Finnhub company-news summary 에 "왜"가 담긴 경우가 많아 헤드라인만으론 놓친다.)
+STOCK_NEWS_SUMMARY_MAX_CHARS: int = 200
+# 개별 company-news 로 근거가 약한 종목을, 그날 시장 전체 뉴스(general)에서
+# 종목명·티커가 언급된 기사로 보강할 때 종목당 최대 추가 개수.
+MARKET_CROSS_MAX_PER_TICKER: int = 2
 
 # 연준·정책 뉴스 필터 키워드 (대소문자 무시, 헤드라인·요약에서 부분 일치)
 # 수집된 시장 뉴스에서 정책 관련 기사를 따로 골라 해설의 정책 코멘트 근거로 쓴다.
@@ -222,7 +294,9 @@ CALENDAR_EXCLUDE_KEYWORDS: list[str] = ["GDPNow"]
 # Gemini 해설
 # ---------------------------------------------------------------------------
 GEMINI_MODEL: str = "gemini-2.5-flash"  # 무료 티어에서 충분히 빠르고 좋음 (2.0-flash는 무료 한도 0)
-GEMINI_MAX_TOKENS: int = 2000
+# 종목·무버 근거가 늘어 코멘트 대상이 많아지면서 출력 JSON 이 길어져 2000 에선 잘렸다.
+# (잘리면 파싱 실패로 해설 전체가 None 이 된다.) 여유를 둬 truncation 을 막는다.
+GEMINI_MAX_TOKENS: int = 3500
 
 # ---------------------------------------------------------------------------
 # Telegram 알림
