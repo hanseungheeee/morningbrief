@@ -8,6 +8,7 @@ from datetime import datetime
 
 from config import DATA_DIR
 from src.analysis.commentary import generate_commentary
+from src.collectors.calendar import collect_calendar
 from src.collectors.crypto import collect_crypto
 from src.collectors.market import collect_indices, collect_macros
 from src.collectors.movers import collect_movers
@@ -74,11 +75,19 @@ def collect_all(with_commentary: bool = True) -> dict:
         print(f"[경고] 무버 뉴스 수집 단계 실패: {exc}")
         mover_news = {}
 
+    # 경제 캘린더 수집 (오늘 발표 지표 + 예정 일정, 실패해도 파이프라인은 계속)
+    try:
+        calendar = collect_calendar(now)
+    except Exception as exc:
+        print(f"[경고] 경제 캘린더 수집 단계 실패: {exc}")
+        calendar = {"today_date": "", "today": [], "upcoming": []}
+
     # Claude 해설 (--no-commentary 면 건너뜀, 실패 시 None)
     commentary = None
     if with_commentary:
         commentary = generate_commentary(market, crypto, news, stocks, stock_news,
-                                         movers, mover_news, policy_news)
+                                         movers, mover_news, policy_news,
+                                         calendar["today"])
 
     return {
         "date": now.strftime("%Y-%m-%d"),
@@ -91,6 +100,12 @@ def collect_all(with_commentary: bool = True) -> dict:
         "policy_news": policy_news,
         "stock_news": stock_news,
         "mover_news": mover_news,
+        # 경제 캘린더: 오늘 발표 결과 + 예정 일정 (calendar_comment 는 commentary 안)
+        "calendar_today": calendar["today"],
+        "calendar_upcoming": calendar["upcoming"],
+        "calendar_today_date": calendar["today_date"],
+        # 오늘 발표 지표 해설을 top-level 로도 미러링 (commentary 없으면 None)
+        "calendar_comment": (commentary or {}).get("calendar_comment"),
         # 종목·무버·정책 코멘트는 commentary 안에 포함 (stock/mover_comments, policy_comment)
         "commentary": commentary,
     }
@@ -154,7 +169,37 @@ def print_report(payload: dict) -> None:
     movers = payload.get("movers") or {}
     _print_section("오늘의 무버 · 상승", movers.get("gainers", []), with_points=True)
     _print_section("오늘의 무버 · 하락", movers.get("losers", []), with_points=True)
+    _print_calendar(payload)
     print()
+
+
+# 예상 대비 상회/하회 라벨 (콘솔용)
+_SURPRISE_LABEL = {"above": "상회", "below": "하회", "inline": "부합"}
+
+
+def _print_calendar(payload: dict) -> None:
+    """경제 캘린더(오늘 발표 결과 + 예정 일정)를 콘솔에 출력한다."""
+    today = payload.get("calendar_today") or []
+    upcoming = payload.get("calendar_upcoming") or []
+
+    print(f"\n[오늘의 경제 지표 · 기준일 {payload.get('calendar_today_date', '')}]")
+    if not today:
+        print("  (발표된 주요 지표 없음)")
+    else:
+        for e in today:
+            tag = _SURPRISE_LABEL.get(e.get("surprise") or "", "")
+            tag = f"  ({tag})" if tag else ""
+            print(f"  {e['name']:<34} 실제 {e.get('actual') or '-':>9} | "
+                  f"예상 {e.get('consensus') or '-':>9} | 이전 {e.get('previous') or '-':>9}{tag}")
+
+    print("\n[예정 일정]")
+    if not upcoming:
+        print("  (예정된 주요 지표 없음)")
+    else:
+        for e in upcoming:
+            cons = e.get("consensus")
+            cons = f"  예상 {cons}" if cons else ""
+            print(f"  {e['date']}({e['weekday']})  {e['name']}{cons}")
 
 
 def render_step() -> None:
