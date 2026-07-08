@@ -5,7 +5,7 @@
 set -o pipefail
 
 # --- 경로 설정 (프로젝트 위치가 바뀌면 여기만 수정) ---
-PROJECT_DIR="/Users/han/Desktop/sh notice/morning-brief"
+PROJECT_DIR="/Users/han/projects/morning-brief"
 VENV_PY="$PROJECT_DIR/venv/bin/python"
 LOG_DIR="$PROJECT_DIR/logs"
 LOG_FILE="$LOG_DIR/run_daily.log"

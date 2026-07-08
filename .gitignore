@@ -17,3 +17,6 @@ data/*.json
 logs/
 
 # output/ 은 GitHub Pages 서빙 대상이므로 커밋한다 (index.html 등 포함)
+
+# Claude Code 세션 설정 (개인 환경용)
+.claude/
