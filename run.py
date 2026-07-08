@@ -10,6 +10,7 @@ from config import DATA_DIR
 from src.analysis.commentary import generate_commentary
 from src.collectors.crypto import collect_crypto
 from src.collectors.market import collect_indices, collect_macros
+from src.collectors.movers import collect_movers
 from src.collectors.news import collect_news, collect_stock_news
 from src.collectors.stocks import collect_stocks
 from src.notify.telegram import send_notification
@@ -44,6 +45,13 @@ def collect_all(with_commentary: bool = True) -> dict:
         print(f"[경고] 뉴스 수집 단계 실패: {exc}")
         news = []
 
+    # 시장 무버 추출 (실패해도 파이프라인은 계속)
+    try:
+        movers = collect_movers()
+    except Exception as exc:
+        print(f"[경고] 무버 수집 단계 실패: {exc}")
+        movers = {"gainers": [], "losers": []}
+
     # 종목별 뉴스 수집 (실패해도 파이프라인은 계속)
     try:
         stock_news = collect_stock_news()
@@ -51,10 +59,19 @@ def collect_all(with_commentary: bool = True) -> dict:
         print(f"[경고] 종목 뉴스 수집 단계 실패: {exc}")
         stock_news = {}
 
+    # 무버 종목 뉴스 수집 (실패해도 파이프라인은 계속)
+    try:
+        mover_tickers = [m["ticker"] for m in movers["gainers"] + movers["losers"]]
+        mover_news = collect_stock_news(mover_tickers) if mover_tickers else {}
+    except Exception as exc:
+        print(f"[경고] 무버 뉴스 수집 단계 실패: {exc}")
+        mover_news = {}
+
     # Claude 해설 (--no-commentary 면 건너뜀, 실패 시 None)
     commentary = None
     if with_commentary:
-        commentary = generate_commentary(market, crypto, news, stocks, stock_news)
+        commentary = generate_commentary(market, crypto, news, stocks, stock_news,
+                                         movers, mover_news)
 
     return {
         "date": now.strftime("%Y-%m-%d"),
@@ -62,9 +79,12 @@ def collect_all(with_commentary: bool = True) -> dict:
         "market": market,
         "crypto": crypto,
         "stocks": stocks,
+        "movers": movers,
         "news": news,
         "stock_news": stock_news,
-        "commentary": commentary,  # 종목 코멘트는 commentary.stock_comments 에 포함
+        "mover_news": mover_news,
+        # 종목·무버 코멘트는 commentary.stock_comments / commentary.mover_comments 에 포함
+        "commentary": commentary,
     }
 
 
@@ -123,6 +143,9 @@ def print_report(payload: dict) -> None:
     _print_section("매크로", payload["market"]["macros"], with_points=True)
     _print_section("암호화폐 (USD)", payload["crypto"], with_points=False)
     _print_section("주요 종목", payload.get("stocks", []), with_points=True)
+    movers = payload.get("movers") or {}
+    _print_section("오늘의 무버 · 상승", movers.get("gainers", []), with_points=True)
+    _print_section("오늘의 무버 · 하락", movers.get("losers", []), with_points=True)
     print()
 
 
