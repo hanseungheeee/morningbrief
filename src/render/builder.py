@@ -104,6 +104,8 @@ def build_context(payload: dict) -> dict:
         "indices": [_shape_market_row(r, with_points=True) for r in market.get("indices", [])],
         "macros": [_shape_market_row(r, with_points=True) for r in market.get("macros", [])],
         "crypto": [_shape_crypto_row(r) for r in payload.get("crypto", [])],
+        # 관심 종목: 표시 항목이 암호화폐와 같아(이름·현재가·등락률) 같은 뷰모델을 쓴다
+        "stocks": [_shape_crypto_row(r) for r in payload.get("stocks", [])],
         "commentary": commentary,
     }
 

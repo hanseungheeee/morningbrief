@@ -38,6 +38,24 @@ MACRO_TICKERS: dict[str, str] = {
 }
 
 # ---------------------------------------------------------------------------
+# 관심 종목 (yfinance/Finnhub 심볼 → 한글 표시명)
+# ---------------------------------------------------------------------------
+WATCH_TICKERS: dict[str, str] = {
+    # 빅테크
+    "NVDA": "엔비디아",
+    "AAPL": "애플",
+    "MSFT": "마이크로소프트",
+    "GOOGL": "알파벳",
+    "AMZN": "아마존",
+    "META": "메타",
+    "TSLA": "테슬라",
+    # 반도체
+    "TSM": "TSMC",
+    "AVGO": "브로드컴",
+    "MU": "마이크론",
+}
+
+# ---------------------------------------------------------------------------
 # 암호화폐 (CoinGecko id → 한글 표시명)
 # ---------------------------------------------------------------------------
 CRYPTO_COINS: dict[str, str] = {
@@ -72,6 +90,11 @@ FINNHUB_NEWS_URL: str = "https://finnhub.io/api/v1/news"
 NEWS_CATEGORIES: list[str] = ["general", "forex", "crypto"]
 NEWS_RECENT_HOURS: int = 24  # 이 시간 이내 기사만 사용
 NEWS_MAX_ITEMS: int = 30     # Claude 입력 토큰 절약을 위해 상위 N개만
+
+# 종목별 뉴스 (Finnhub company-news)
+FINNHUB_COMPANY_NEWS_URL: str = "https://finnhub.io/api/v1/company-news"
+STOCK_NEWS_DAYS: int = 2          # 최근 N일 기사만 조회
+STOCK_NEWS_MAX_PER_TICKER: int = 3  # 종목당 상위 N개 헤드라인 (토큰 절약)
 
 # ---------------------------------------------------------------------------
 # Gemini 해설

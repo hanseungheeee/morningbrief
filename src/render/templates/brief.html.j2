@@ -115,6 +115,18 @@
     margin-right: 6px;
   }
 
+  /* 종목 코멘트 목록 (표 아래, 작은 글씨) */
+  .stock-comments {
+    margin: 10px 0 0;
+    padding-left: 18px;
+  }
+  .stock-comments li {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 4px 0;
+  }
+  .stock-comments .ticker-name { font-weight: 700; color: var(--text); }
+
   footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 24px; }
 </style>
 </head>
@@ -203,6 +215,34 @@
     <div class="comment"><span class="tag">해설</span>{{ commentary.crypto_comment }}</div>
     {% endif %}
   </section>
+
+  <!-- 섹션4: 주요 종목 (데이터 있을 때만) -->
+  {% if stocks %}
+  <section>
+    <h2>주요 종목</h2>
+    <table>
+      <thead>
+        <tr><th>종목명</th><th>현재가</th><th>등락률</th></tr>
+      </thead>
+      <tbody>
+        {% for row in stocks %}
+        <tr>
+          <td><span class="name">{{ row.name }}</span></td>
+          <td class="price">{{ row.price }}</td>
+          <td class="{{ row.direction }}">{{ row.change_pct }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if commentary.stock_comments %}
+    <ul class="stock-comments">
+      {% for sc in commentary.stock_comments %}
+      <li><span class="ticker-name">{{ sc.name }}</span> — {{ sc.comment }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+  {% endif %}
 
   <footer>미국 증시 아침 브리핑 · 자동 생성</footer>
 
