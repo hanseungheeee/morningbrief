@@ -84,6 +84,10 @@
   .down { color: var(--down); }
   .flat { color: var(--flat); }
 
+  /* 종목 표기: 영문 티커(강조) + 한글명(보조) 병기 */
+  .tk { font-weight: 700; color: var(--text); }
+  .ko { color: var(--muted); font-weight: 400; font-size: 0.92em; margin-left: 4px; }
+
   /* 오늘의 장 요약 블록 */
   .summary {
     background: var(--card);
@@ -245,7 +249,7 @@
       <tbody>
         {% for row in stocks %}
         <tr>
-          <td><span class="name">{{ row.name }}</span></td>
+          <td><span class="tk">{{ row.ticker }}</span><span class="ko">{{ row.name }}</span></td>
           <td class="price">{{ row.price }}</td>
           <td class="{{ row.direction }}">{{ row.change_pct }}</td>
         </tr>
@@ -255,7 +259,7 @@
     {% if commentary.stock_comments %}
     <ul class="stock-comments">
       {% for sc in commentary.stock_comments %}
-      <li><span class="ticker-name">{{ sc.name }}</span> — {{ sc.comment }}</li>
+      <li><span class="ticker-name">{{ sc.ticker }}</span><span class="ko">{{ sc.name }}</span> — {{ sc.comment }}</li>
       {% endfor %}
     </ul>
     {% endif %}
@@ -275,7 +279,7 @@
       <tbody>
         {% for row in mover_gainers %}
         <tr>
-          <td><span class="name">{{ row.name }}</span></td>
+          <td><span class="tk">{{ row.ticker }}</span><span class="ko">{{ row.name }}</span></td>
           <td class="price">{{ row.price }}</td>
           <td class="{{ row.direction }}">{{ row.change_pct }}</td>
         </tr>
@@ -292,7 +296,7 @@
       <tbody>
         {% for row in mover_losers %}
         <tr>
-          <td><span class="name">{{ row.name }}</span></td>
+          <td><span class="tk">{{ row.ticker }}</span><span class="ko">{{ row.name }}</span></td>
           <td class="price">{{ row.price }}</td>
           <td class="{{ row.direction }}">{{ row.change_pct }}</td>
         </tr>
@@ -303,7 +307,7 @@
     {% if commentary.mover_comments %}
     <ul class="stock-comments">
       {% for mc in commentary.mover_comments %}
-      <li><span class="ticker-name {{ mc.direction }}">{{ mc.name }}</span> — {{ mc.comment }}</li>
+      <li><span class="ticker-name {{ mc.direction }}">{{ mc.ticker }}</span><span class="ko">{{ mc.name }}</span> — {{ mc.comment }}</li>
       {% endfor %}
     </ul>
     {% endif %}

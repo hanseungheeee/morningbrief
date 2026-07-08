@@ -83,9 +83,14 @@ def _shape_market_row(row: dict, *, with_points: bool) -> dict:
 
 
 def _shape_crypto_row(row: dict) -> dict:
-    """암호화폐 한 행을 템플릿용 뷰모델로 변환한다."""
+    """암호화폐·종목·무버 한 행을 템플릿용 뷰모델로 변환한다.
+
+    ticker 는 종목·무버에만 있고 암호화폐엔 없다(빈 문자열). 템플릿은 종목·무버
+    섹션에서만 ticker 를 렌더하므로 암호화폐 쪽엔 영향이 없다.
+    """
     change_pct = row.get("change_pct")
     return {
+        "ticker": row.get("ticker", ""),
         "name": row["name"],
         "price": _fmt_price(row.get("price")),
         "change_pct": _fmt_signed(change_pct, "%"),
