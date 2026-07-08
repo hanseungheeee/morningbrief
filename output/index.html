@@ -15,6 +15,9 @@
     --text: #1a1a1a;
     --muted: #666;
     --border: #e3e5e9;
+    /* 경제지표 예상 대비: 상회=주황, 하회=청록 (등락 색과 구분해 호/악재 오해 방지) */
+    --sp-above: #c9761d;
+    --sp-below: #2f8f83;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -26,6 +29,8 @@
       --text: #f0f0f2;
       --muted: #9aa0aa;
       --border: #2c3038;
+      --sp-above: #e0913f;
+      --sp-below: #4bb3a5;
     }
   }
   * { box-sizing: border-box; }
@@ -129,6 +134,15 @@
   .stock-comments .ticker-name.up { color: var(--up); }
   .stock-comments .ticker-name.down { color: var(--down); }
 
+  /* 경제지표 예상 대비 배지 */
+  .badge { font-size: 11px; font-weight: 700; margin-left: 6px; white-space: nowrap; }
+  .badge.above { color: var(--sp-above); }
+  .badge.below { color: var(--sp-below); }
+  .badge.inline { color: var(--flat); }
+  /* 예정 일정 날짜 셀 */
+  td.cal-date { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.cal-cons { color: var(--muted); }
+
   /* 무버 상승/하락 소제목 */
   .mover-caption {
     font-size: 12px;
@@ -146,26 +160,26 @@
   <header>
     <div class="date">2026-07-08</div>
     <h1>미국 증시 아침 브리핑</h1>
-    <div class="collected">수집 시각 2026-07-08 10:18:30</div>
+    <div class="collected">수집 시각 2026-07-08 23:13:44</div>
   </header>
 
   <!-- 오늘의 장 요약 (해설 있을 때만) -->
   
   <div class="summary">
     <h2>오늘의 장 요약</h2>
-    <p>미국 증시는 지정학적 긴장 고조와 유가 상승 영향으로 주요 지수들이 하락 마감했습니다. 특히 이란 관련 지정학적 리스크가 시장 전반에 영향을 미치며 기술주 중심으로 조정을 보였습니다. 반도체 관련 종목들이 하락세를 주도했습니다.</p>
+    <p>중동 긴장 고조로 인한 유가 급등과 이란 휴전 종료 소식은 시장 전반에 불안감을 확산시키며 주요 지수들이 하락 마감했습니다. 특히 트럼프 전 대통령의 이란 관련 발언이 유가를 5% 가까이 끌어올렸고, 이는 인플레이션 우려를 다시 키우며 기술주를 포함한 전반적인 시장에 부담으로 작용했습니다. 미 10년물 국채금리도 상승했으며, VIX 지수는 6% 넘게 치솟으며 시장의 변동성 확대와 투자자들의 경계심을 반영했습니다. 이러한 거시적 불확실성 속에서 개별 기업들의 주가도 대부분 하락세를 보였습니다.</p>
     
     <ul>
       
-      <li>미국의 이란 공습 및 제재 재개로 지정학적 긴장 고조</li>
+      <li>중동 긴장 고조와 유가 급등</li>
       
-      <li>WTI 유가 5% 이상 급등</li>
+      <li>인플레이션 우려 재점화</li>
       
-      <li>반도체 섹터 전반 약세</li>
+      <li>증시 전반의 하락 압력</li>
       
-      <li>주요 기술주 차익 실현 매물 출회</li>
+      <li>변동성 확대 (VIX 상승)</li>
       
-      <li>달러 인덱스 소폭 상승</li>
+      <li>예상 하회한 서비스업 지표</li>
       
     </ul>
     
@@ -179,31 +193,31 @@
       
       <div class="card">
         <div class="label">S&amp;P 500</div>
-        <div class="price">7,503.85</div>
-        <div class="chg down">-0.45% (-33.58)</div>
+        <div class="price">7,461.10</div>
+        <div class="chg down">-0.57% (-42.75)</div>
       </div>
       
       <div class="card">
         <div class="label">나스닥</div>
-        <div class="price">25,818.69</div>
-        <div class="chg down">-1.16% (-302.47)</div>
+        <div class="price">25,709.57</div>
+        <div class="chg down">-0.42% (-109.12)</div>
       </div>
       
       <div class="card">
         <div class="label">다우</div>
-        <div class="price">52,925.15</div>
-        <div class="chg down">-0.25% (-130.76)</div>
+        <div class="price">52,380.22</div>
+        <div class="chg down">-1.03% (-544.93)</div>
       </div>
       
       <div class="card">
         <div class="label">러셀 2000</div>
-        <div class="price">2,982.49</div>
-        <div class="chg down">-0.90% (-27.05)</div>
+        <div class="price">2,967.96</div>
+        <div class="chg down">-0.49% (-14.53)</div>
       </div>
       
     </div>
     
-    <div class="comment"><span class="tag">해설</span>S&amp;P 500, 나스닥, 다우지수 모두 하락했으며, 특히 기술주 비중이 큰 나스닥 지수는 1.16% 하락하며 가장 큰 낙폭을 기록했습니다. 이는 미국의 이란 공습과 관련 제재 재개 소식으로 지정학적 긴장이 고조되고 유가가 상승한 것이 복합적으로 작용한 것으로 보입니다.</div>
+    <div class="comment"><span class="tag">해설</span>중동 분쟁 심화와 유가 급등 소식에 투자 심리가 위축되며 다우지수는 1% 넘게 하락했고, S&amp;P 500과 나스닥 역시 각각 0.57%, 0.42% 하락하며 전반적인 약세를 보였습니다.</div>
     
   </section>
 
@@ -218,45 +232,149 @@
         
         <tr>
           <td><span class="name">금</span></td>
-          <td class="price">4,114.20</td>
-          <td class="down">-0.98%</td>
-          <td class="down">-40.90</td>
+          <td class="price">4,076.80</td>
+          <td class="down">-1.65%</td>
+          <td class="down">-68.50</td>
         </tr>
         
         <tr>
           <td><span class="name">WTI 유가</span></td>
-          <td class="price">72.12</td>
-          <td class="up">+5.21%</td>
-          <td class="up">+3.57</td>
+          <td class="price">73.94</td>
+          <td class="up">+4.97%</td>
+          <td class="up">+3.50</td>
         </tr>
         
         <tr>
           <td><span class="name">미 10년물 국채금리</span></td>
-          <td class="price">4.53</td>
-          <td class="up">+0.98%</td>
-          <td class="up">+0.04</td>
+          <td class="price">4.58</td>
+          <td class="up">+1.15%</td>
+          <td class="up">+0.05</td>
         </tr>
         
         <tr>
           <td><span class="name">달러 인덱스</span></td>
-          <td class="price">101.15</td>
-          <td class="up">+0.30%</td>
-          <td class="up">+0.30</td>
+          <td class="price">101.10</td>
+          <td class="down">-0.04%</td>
+          <td class="down">-0.04</td>
         </tr>
         
         <tr>
           <td><span class="name">VIX</span></td>
-          <td class="price">16.13</td>
-          <td class="up">+3.60%</td>
-          <td class="up">+0.56</td>
+          <td class="price">17.18</td>
+          <td class="up">+6.51%</td>
+          <td class="up">+1.05</td>
         </tr>
         
       </tbody>
     </table>
     
-    <div class="comment"><span class="tag">해설</span>WTI 유가는 미국의 이란 공습 및 이란산 원유 판매 면허 취소 소식에 5.21% 급등했습니다. 미 10년물 국채금리는 소폭 상승한 4.53%를 기록했으며, VIX 지수도 3.6% 상승하며 시장의 불확실성이 커졌음을 시사했습니다.</div>
+    <div class="comment"><span class="tag">해설</span>중동 긴장 고조로 WTI 유가는 약 5% 급등한 73.94달러를 기록했고, 이는 인플레이션 우려를 키우며 미 10년물 국채금리도 4.58%로 상승했습니다. 시장의 불확실성이 커지면서 VIX 지수는 6.51% 상승한 17.18을 기록하며 투자자들의 불안 심리를 나타냈습니다.</div>
     
   </section>
+
+  <!-- 연준·정책 해설 (정책 뉴스가 있는 날만) -->
+  
+  <section>
+    <h2>연준·정책</h2>
+    <div class="comment"><span class="tag">해설</span>중동 분쟁의 재점화로 인한 유가 급등은 인플레이션 압력을 가중시키는 요인으로 작용하며, 연준의 향후 통화정책 방향에 대한 불확실성을 높였습니다.</div>
+  </section>
+  
+
+  <!-- 경제 지표: 오늘 발표된 결과 (데이터 있을 때만) -->
+  
+  <section>
+    <h2>오늘의 경제 지표</h2>
+    <table>
+      <thead>
+        <tr><th>지표</th><th>실제</th><th>예상</th><th>이전</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="name">S&amp;P Global Composite PMI</span></td>
+          <td class="price">51.9<span class="badge below">▼하회</span></td>
+          <td>52.2</td>
+          <td>51.5</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">S&amp;P Global Services PMI</span></td>
+          <td class="price">51.2<span class="badge below">▼하회</span></td>
+          <td>51.3</td>
+          <td>51.3</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">ISM Non-Manufacturing PMI</span></td>
+          <td class="price">54.0<span class="badge below">▼하회</span></td>
+          <td>54.2</td>
+          <td>54.5</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+    <div class="comment"><span class="tag">해설</span>오늘 발표된 S&amp;P Global Composite PMI는 51.9로 예상치 52.2를 하회했고, S&amp;P Global Services PMI는 51.2로 예상치 51.3을 하회했으며, ISM Non-Manufacturing PMI 또한 54.0으로 예상치 54.2를 하회하며 전반적으로 서비스업 활동이 예상보다 둔화되었음을 시사했습니다.</div>
+    
+  </section>
+  
+
+  <!-- 경제 지표: 예정 일정 (데이터 있을 때만, 해설 없이 나열) -->
+  
+  <section>
+    <h2>예정 일정</h2>
+    <table>
+      <thead>
+        <tr><th>날짜</th><th>지표</th><th>예상</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td class="cal-date">07/08(수)</td>
+          <td><span class="name">FOMC Member Bowman Speaks</span></td>
+          <td class="cal-cons">-</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">07/08(수)</td>
+          <td><span class="name">Trade Balance</span></td>
+          <td class="cal-cons">-78.30B</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">07/09(목)</td>
+          <td><span class="name">FOMC Meeting Minutes</span></td>
+          <td class="cal-cons">-</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">07/10(금)</td>
+          <td><span class="name">Continuing Jobless Claims</span></td>
+          <td class="cal-cons">1,820K</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">07/10(금)</td>
+          <td><span class="name">Initial Jobless Claims</span></td>
+          <td class="cal-cons">218K</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">07/10(금)</td>
+          <td><span class="name">FOMC Member Williams Speaks</span></td>
+          <td class="cal-cons">-</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">07/10(금)</td>
+          <td><span class="name">Existing Home Sales</span></td>
+          <td class="cal-cons">4.19M</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </section>
+  
 
   <!-- 섹션3: 암호화폐 -->
   <section>
@@ -269,32 +387,32 @@
         
         <tr>
           <td><span class="name">비트코인</span></td>
-          <td class="price">63,527.00</td>
-          <td class="down">-0.67%</td>
+          <td class="price">61,990.00</td>
+          <td class="down">-1.66%</td>
         </tr>
         
         <tr>
           <td><span class="name">이더리움</span></td>
-          <td class="price">1,776.95</td>
-          <td class="down">-0.95%</td>
+          <td class="price">1,734.63</td>
+          <td class="down">-1.99%</td>
         </tr>
         
         <tr>
           <td><span class="name">리플</span></td>
-          <td class="price">1.11</td>
-          <td class="down">-2.56%</td>
+          <td class="price">1.08</td>
+          <td class="down">-3.48%</td>
         </tr>
         
         <tr>
           <td><span class="name">솔라나</span></td>
-          <td class="price">80.24</td>
-          <td class="down">-2.20%</td>
+          <td class="price">77.16</td>
+          <td class="down">-4.59%</td>
         </tr>
         
       </tbody>
     </table>
     
-    <div class="comment"><span class="tag">해설</span>비트코인은 0.67% 하락하는 등 주요 암호화폐들이 전반적으로 약세를 보였습니다.</div>
+    <div class="comment"><span class="tag">해설</span>중동 긴장 고조와 유가 상승 등 거시경제 불확실성 속에서 비트코인은 1.66% 하락한 61,990달러를 기록하는 등 주요 암호화폐들이 동반 하락했습니다.</div>
     
   </section>
 
@@ -309,63 +427,63 @@
       <tbody>
         
         <tr>
-          <td><span class="name">마이크론</span></td>
-          <td class="price">938.38</td>
-          <td class="down">-4.71%</td>
-        </tr>
-        
-        <tr>
-          <td><span class="name">TSMC</span></td>
-          <td class="price">432.57</td>
-          <td class="down">-4.25%</td>
+          <td><span class="name">브로드컴</span></td>
+          <td class="price">386.35</td>
+          <td class="up">+4.20%</td>
         </tr>
         
         <tr>
           <td><span class="name">테슬라</span></td>
-          <td class="price">402.90</td>
-          <td class="down">-4.02%</td>
+          <td class="price">394.65</td>
+          <td class="down">-2.05%</td>
         </tr>
         
         <tr>
           <td><span class="name">메타</span></td>
-          <td class="price">615.58</td>
-          <td class="up">+2.55%</td>
-        </tr>
-        
-        <tr>
-          <td><span class="name">브로드컴</span></td>
-          <td class="price">370.78</td>
-          <td class="down">-0.83%</td>
-        </tr>
-        
-        <tr>
-          <td><span class="name">아마존</span></td>
-          <td class="price">245.98</td>
-          <td class="up">+0.75%</td>
-        </tr>
-        
-        <tr>
-          <td><span class="name">엔비디아</span></td>
-          <td class="price">196.93</td>
-          <td class="up">+0.71%</td>
-        </tr>
-        
-        <tr>
-          <td><span class="name">애플</span></td>
-          <td class="price">310.66</td>
-          <td class="down">-0.64%</td>
+          <td class="price">604.79</td>
+          <td class="down">-1.75%</td>
         </tr>
         
         <tr>
           <td><span class="name">마이크로소프트</span></td>
-          <td class="price">388.84</td>
-          <td class="up">+0.54%</td>
+          <td class="price">383.49</td>
+          <td class="down">-1.37%</td>
         </tr>
         
         <tr>
           <td><span class="name">알파벳</span></td>
-          <td class="price">367.03</td>
-          <td class="up">+0.16%</td>
+          <td class="price">362.58</td>
+          <td class="down">-1.21%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">아마존</span></td>
+          <td class="price">243.09</td>
+          <td class="down">-1.17%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">마이크론</span></td>
+          <td class="price">944.51</td>
+          <td class="up">+0.65%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">TSMC</span></td>
+          <td class="price">433.98</td>
+          <td class="up">+0.33%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">애플</span></td>
+          <td class="price">309.88</td>
+          <td class="down">-0.25%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">엔비디아</span></td>
+          <td class="price">197.35</td>
+          <td class="up">+0.21%</td>
         </tr>
         
       </tbody>
@@ -373,25 +491,25 @@
     
     <ul class="stock-comments">
       
-      <li><span class="ticker-name">마이크론</span> — 마이크론은 4.71% 하락했습니다. &#39;삼성의 AI 우려 확산&#39;이라는 헤드라인이 있었으나, 직접적인 하락 원인은 관련 뉴스에서 확인되지 않습니다.</li>
+      <li><span class="ticker-name">브로드컴</span> — 브로드컴은 애플이 미국 내 칩 제조에 300억 달러 이상을 투자하는 파트너십을 확장했다는 소식에 4.2% 상승했습니다.</li>
       
-      <li><span class="ticker-name">TSMC</span> — TSMC는 4.25% 하락했습니다. 관련 뉴스에서 하락 원인은 확인되지 않습니다.</li>
+      <li><span class="ticker-name">테슬라</span> — 테슬라 주가는 -2.05% 하락했습니다. 급락 원인은 관련 뉴스에서 확인되지 않습니다.</li>
       
-      <li><span class="ticker-name">테슬라</span> — 테슬라는 4.02% 하락했습니다. &#39;테슬라 주식이 광범위한 시장보다 더 많이 하락한다&#39;는 헤드라인이 있었으며, 관련 뉴스에서 구체적인 하락 원인은 확인되지 않습니다.</li>
+      <li><span class="ticker-name">메타</span> — 메타 주가는 -1.75% 하락했습니다. 급락 원인은 관련 뉴스에서 확인되지 않습니다.</li>
       
-      <li><span class="ticker-name">메타</span> — 메타는 2.55% 상승했습니다. &#39;시장이 하락하는 가운데 메타 플랫폼스가 상승했다&#39;는 헤드라인이 있었으나, 구체적인 상승 원인은 관련 뉴스에서 확인되지 않습니다.</li>
+      <li><span class="ticker-name">마이크로소프트</span> — 마이크로소프트는 AI 칩 경쟁이 특정 파이프라인에 집중되고 있다는 소식과 함께 1.37% 하락했습니다.</li>
       
-      <li><span class="ticker-name">브로드컴</span> — 브로드컴은 0.83% 하락했습니다. 관련 뉴스에서 하락 원인은 확인되지 않습니다.</li>
+      <li><span class="ticker-name">알파벳</span> — 알파벳은 AI 칩 경쟁이 특정 파이프라인에 집중되고 있다는 소식 속에서 1.21% 하락했습니다.</li>
       
-      <li><span class="ticker-name">아마존</span> — 아마존은 0.75% 상승했습니다. &#39;아마존 주식, AI 추진이 250억 달러 채권 발행을 견인하며 상승&#39;했다는 헤드라인이 있었습니다.</li>
+      <li><span class="ticker-name">아마존</span> — 아마존 주가는 -1.17% 하락했습니다. 하락 원인은 관련 뉴스에서 확인되지 않습니다.</li>
       
-      <li><span class="ticker-name">엔비디아</span> — 엔비디아는 0.71% 상승했습니다. &#39;칩 섹터가 타격을 받는 가운데, 트레이더들은 엔비디아의 큰 랠리에 베팅한다&#39;는 헤드라인이 있었습니다.</li>
+      <li><span class="ticker-name">마이크론</span> — 마이크론은 트럼프 전 대통령의 이란 관련 발언으로 인한 시장 하락 속에서도 0.65% 상승했습니다.</li>
       
-      <li><span class="ticker-name">애플</span> — 애플은 0.64% 하락했습니다. 관련 뉴스에서 하락 원인은 확인되지 않습니다.</li>
+      <li><span class="ticker-name">TSMC</span> — TSMC는 0.33% 상승했습니다. 상승 원인은 관련 뉴스에서 확인되지 않습니다.</li>
       
-      <li><span class="ticker-name">마이크로소프트</span> — 마이크로소프트는 0.54% 상승했습니다. 관련 뉴스에서 상승 원인은 확인되지 않습니다.</li>
+      <li><span class="ticker-name">애플</span> — 애플은 브로드컴과의 칩 제조 파트너십 확장 소식에도 불구하고 0.25% 하락했습니다.</li>
       
-      <li><span class="ticker-name">알파벳</span> — 알파벳은 0.16% 상승했습니다. 넷플릭스, 디즈니와 함께 FIFA 월드컵 미국 중계권 패키지에 관심이 있다는 보도가 있었습니다.</li>
+      <li><span class="ticker-name">엔비디아</span> — 엔비디아는 시장의 전반적인 하락세 속에서도 0.21% 소폭 상승했습니다. 상승 원인은 관련 뉴스에서 확인되지 않습니다.</li>
       
     </ul>
     
@@ -411,21 +529,21 @@
       <tbody>
         
         <tr>
-          <td><span class="name">클라우드플레어</span></td>
-          <td class="price">268.83</td>
-          <td class="up">+8.60%</td>
+          <td><span class="name">타깃</span></td>
+          <td class="price">132.63</td>
+          <td class="up">+3.98%</td>
         </tr>
         
         <tr>
           <td><span class="name">옥시덴털</span></td>
-          <td class="price">51.68</td>
-          <td class="up">+5.88%</td>
+          <td class="price">53.47</td>
+          <td class="up">+3.46%</td>
         </tr>
         
         <tr>
-          <td><span class="name">길리어드</span></td>
-          <td class="price">136.36</td>
-          <td class="up">+5.21%</td>
+          <td><span class="name">텍사스인스트루먼트</span></td>
+          <td class="price">299.91</td>
+          <td class="up">+2.25%</td>
         </tr>
         
       </tbody>
@@ -440,21 +558,21 @@
       <tbody>
         
         <tr>
-          <td><span class="name">리비안</span></td>
-          <td class="price">16.49</td>
-          <td class="down">-18.12%</td>
+          <td><span class="name">도어대시</span></td>
+          <td class="price">184.66</td>
+          <td class="down">-5.65%</td>
         </tr>
         
         <tr>
-          <td><span class="name">루시드</span></td>
-          <td class="price">5.99</td>
-          <td class="down">-9.98%</td>
+          <td><span class="name">익스피디아</span></td>
+          <td class="price">256.77</td>
+          <td class="down">-4.86%</td>
         </tr>
         
         <tr>
-          <td><span class="name">인텔</span></td>
-          <td class="price">110.39</td>
-          <td class="down">-9.66%</td>
+          <td><span class="name">팔란티어</span></td>
+          <td class="price">128.05</td>
+          <td class="down">-4.70%</td>
         </tr>
         
       </tbody>
@@ -463,17 +581,17 @@
     
     <ul class="stock-comments">
       
-      <li><span class="ticker-name up">클라우드플레어</span> — 클라우드플레어는 8.6% 급등했습니다. 스코샤뱅크가 클라우드플레어의 투자의견을 상향 조정했다는 뉴스가 있었습니다.</li>
+      <li><span class="ticker-name up">타깃</span> — 타깃은 애널리스트들이 매장 실적 개선과 소매 전략을 긍정적으로 평가하며 3.98% 상승했습니다.</li>
       
-      <li><span class="ticker-name up">옥시덴털</span> — 옥시덴털은 5.88% 상승했습니다. 미국의 이란 공습 소식에 유가가 급등하면서 관련 주식이 상승한 것으로 풀이됩니다.</li>
+      <li><span class="ticker-name up">옥시덴털</span> — 옥시덴털은 Evercore의 등급 상향 조정과 중동 긴장 고조로 인한 유가 급등에 힘입어 3.46% 상승했습니다.</li>
       
-      <li><span class="ticker-name up">길리어드</span> — 길리어드는 5.21% 상승했습니다. 짐 크레이머가 바이오텍을 시장에서 가장 뜨거운 그룹이라고 언급했다는 뉴스가 있었으나, 직접적인 상승 원인은 확인되지 않습니다.</li>
+      <li><span class="ticker-name up">텍사스인스트루먼트</span> — 텍사스인스트루먼트는 Cantor Fitzgerald가 목표가를 상향 조정하며 2.25% 상승했습니다.</li>
       
-      <li><span class="ticker-name down">리비안</span> — 리비안은 18.12% 급락했습니다. &#39;유가 상승; 리비안 주식 폭락&#39;이라는 헤드라인이 있었으나, 직접적인 급락 원인은 관련 뉴스에서 확인되지 않습니다.</li>
+      <li><span class="ticker-name down">도어대시</span> — 도어대시는 시장의 전반적인 하락세 속에서 5.65% 급락했습니다. 급락 원인은 관련 뉴스에서 확인되지 않습니다.</li>
       
-      <li><span class="ticker-name down">루시드</span> — 루시드는 9.98% 하락했습니다. &#39;2분기 인도 보고서, 대대적인 리더십 개편 이후 루시드 주식 트렌드&#39;라는 헤드라인이 있었으나, 하락 원인은 확인되지 않습니다.</li>
+      <li><span class="ticker-name down">익스피디아</span> — 익스피디아는 4.86% 급락했습니다. 급락 원인은 관련 뉴스에서 확인되지 않습니다.</li>
       
-      <li><span class="ticker-name down">인텔</span> — 인텔은 9.66% 하락했습니다. &#39;메가캡 칩 제조업체 하락&#39;이라는 헤드라인이 있었으나, 직접적인 급락 원인은 관련 뉴스에서 확인되지 않습니다.</li>
+      <li><span class="ticker-name down">팔란티어</span> — 팔란티어는 Sovereign AI 확장에도 불구하고 4.7% 급락했습니다. 급락 원인은 관련 뉴스에서 확인되지 않습니다.</li>
       
     </ul>
     
