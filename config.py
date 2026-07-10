@@ -134,7 +134,9 @@ TELEGRAM_BOT_TOKEN: str | None = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID: str | None = os.getenv("TELEGRAM_CHAT_ID")
 
 # GitHub Pages 배포 URL (텔레그램 알림 링크에 사용)
-GITHUB_PAGES_URL: str | None = os.getenv("GITHUB_PAGES_URL")
+# GitHub Actions 는 GITHUB_ 접두 secret/env 를 금지하므로 CI 에선 PAGES_URL 을 쓴다.
+# 로컬 .env 는 기존 GITHUB_PAGES_URL 을 그대로 쓰도록 둘 다 허용.
+GITHUB_PAGES_URL: str | None = os.getenv("PAGES_URL") or os.getenv("GITHUB_PAGES_URL")
 
 # ---------------------------------------------------------------------------
 # Finnhub 뉴스

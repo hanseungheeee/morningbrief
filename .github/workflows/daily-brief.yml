@@ -34,7 +34,8 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      GITHUB_PAGES_URL: ${{ secrets.GITHUB_PAGES_URL }}
+      # GITHUB_ 접두는 예약어라 secret 이름은 PAGES_URL, config.py 가 이 이름도 읽음
+      PAGES_URL: ${{ secrets.PAGES_URL }}
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
