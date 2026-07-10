@@ -151,6 +151,40 @@
   }
   .mover-caption:first-of-type { margin-top: 0; }
 
+  /* 오늘의 관전 포인트 (forward-looking) */
+  .watch {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--sp-above);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 22px;
+  }
+  .watch h2 { font-size: 15px; margin: 0 0 8px; border: none; padding: 0; }
+  .watch ul { margin: 0; padding-left: 18px; }
+  .watch li { font-size: 13.5px; margin: 5px 0; }
+
+  /* 시장 폭 (breadth) */
+  .breadth {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px;
+  }
+  .breadth .bar { display: flex; height: 10px; border-radius: 5px;
+                  overflow: hidden; margin: 9px 0 7px; background: var(--border); }
+  .breadth .bar .up-seg { background: var(--up); }
+  .breadth .bar .down-seg { background: var(--down); }
+  .breadth .meta { font-size: 13px; color: var(--muted);
+                   display: flex; justify-content: space-between; gap: 8px; }
+  .breadth .meta .avg { font-weight: 700; }
+
+  /* 주요 뉴스 목록 */
+  .news-list { list-style: none; margin: 0; padding: 0 4px; }
+  .news-list li { padding: 10px 0; border-top: 1px solid var(--border); font-size: 13.5px; }
+  .news-list li:first-child { border-top: none; }
+  .news-list a { color: var(--text); text-decoration: none; }
+  .news-list a:hover { text-decoration: underline; }
+  .news-list .src { display: block; font-size: 11px; color: var(--muted); margin-top: 3px; }
+
   footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 24px; }
 </style>
 </head>
@@ -178,6 +212,18 @@
   </div>
   {% endif %}
 
+  <!-- 오늘의 관전 포인트 (forward-looking, 해설 있을 때만) -->
+  {% if commentary.watch_points %}
+  <div class="watch">
+    <h2>오늘의 관전 포인트</h2>
+    <ul>
+      {% for wp in commentary.watch_points %}
+      <li>{{ wp }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
   <!-- 섹션1: 3대 지수 + 러셀2000 -->
   <section>
     <h2>주요 지수</h2>
@@ -194,6 +240,23 @@
     <div class="comment"><span class="tag">해설</span>{{ commentary.index_comment }}</div>
     {% endif %}
   </section>
+
+  <!-- 시장 폭: 감시 유니버스 상승/하락 비율 (데이터 있을 때만) -->
+  {% if breadth %}
+  <section>
+    <h2>시장 폭</h2>
+    <div class="breadth">
+      <div class="bar">
+        <div class="up-seg" style="width: {{ breadth.up_pct }}%"></div>
+        <div class="down-seg" style="width: {{ 100 - breadth.up_pct }}%"></div>
+      </div>
+      <div class="meta">
+        <span>{{ breadth.total }}종목 중 <span class="up">상승 {{ breadth.up }}</span> · <span class="down">하락 {{ breadth.down }}</span> (상승 {{ breadth.up_pct }}%)</span>
+        <span class="avg {{ breadth.direction }}">평균 {{ breadth.avg_change_pct }}</span>
+      </div>
+    </div>
+  </section>
+  {% endif %}
 
   <!-- 섹션2: 매크로 지표 -->
   <section>
@@ -217,6 +280,30 @@
     <div class="comment"><span class="tag">해설</span>{{ commentary.macro_comment }}</div>
     {% endif %}
   </section>
+
+  <!-- 섹터 흐름: S&P 11개 섹터 ETF, 강→약 정렬 (데이터 있을 때만) -->
+  {% if sectors %}
+  <section>
+    <h2>섹터 흐름 (강→약)</h2>
+    <table>
+      <thead>
+        <tr><th>섹터</th><th>ETF 가격</th><th>등락률</th></tr>
+      </thead>
+      <tbody>
+        {% for row in sectors %}
+        <tr>
+          <td><span class="name">{{ row.name }}</span></td>
+          <td class="price">{{ row.price }}</td>
+          <td class="{{ row.direction }}">{{ row.change_pct }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if commentary.sector_comment %}
+    <div class="comment"><span class="tag">해설</span>{{ commentary.sector_comment }}</div>
+    {% endif %}
+  </section>
+  {% endif %}
 
   <!-- 연준·정책 해설 (정책 뉴스가 있는 날만) -->
   {% if commentary.policy_comment %}
@@ -367,6 +454,21 @@
       {% endfor %}
     </ul>
     {% endif %}
+  </section>
+  {% endif %}
+
+  <!-- 주요 뉴스: 실제 헤드라인 + 출처 링크 (데이터 있을 때만) -->
+  {% if news %}
+  <section>
+    <h2>주요 뉴스</h2>
+    <ul class="news-list">
+      {% for n in news %}
+      <li>
+        {% if n.url %}<a href="{{ n.url }}" target="_blank" rel="noopener">{{ n.headline }}</a>{% else %}{{ n.headline }}{% endif %}
+        {% if n.source %}<span class="src">{{ n.source }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
   </section>
   {% endif %}
 

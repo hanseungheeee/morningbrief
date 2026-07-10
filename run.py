@@ -10,7 +10,7 @@ from config import DATA_DIR
 from src.analysis.commentary import generate_commentary
 from src.collectors.calendar import collect_calendar
 from src.collectors.crypto import collect_crypto
-from src.collectors.market import collect_indices, collect_macros
+from src.collectors.market import collect_indices, collect_macros, collect_sectors
 from src.collectors.movers import collect_movers
 from src.collectors.news import collect_news, collect_stock_news, filter_policy_news
 from src.collectors.stocks import collect_stocks
@@ -31,6 +31,13 @@ def collect_all(with_commentary: bool = True) -> dict:
         "macros": collect_macros(),
     }
     crypto = collect_crypto()
+
+    # 섹터 로테이션 (S&P 11개 섹터 ETF, 실패해도 파이프라인은 계속)
+    try:
+        sectors = collect_sectors()
+    except Exception as exc:
+        print(f"[경고] 섹터 수집 단계 실패: {exc}")
+        sectors = []
 
     # 관심 종목 등락 수집 (실패해도 파이프라인은 계속)
     try:
@@ -58,7 +65,7 @@ def collect_all(with_commentary: bool = True) -> dict:
         movers = collect_movers()
     except Exception as exc:
         print(f"[경고] 무버 수집 단계 실패: {exc}")
-        movers = {"gainers": [], "losers": []}
+        movers = {"gainers": [], "losers": [], "breadth": None}
 
     # 종목별 뉴스 수집 (실패해도 파이프라인은 계속)
     try:
@@ -87,12 +94,14 @@ def collect_all(with_commentary: bool = True) -> dict:
     if with_commentary:
         commentary = generate_commentary(market, crypto, news, stocks, stock_news,
                                          movers, mover_news, policy_news,
-                                         calendar["today"])
+                                         calendar["today"], sectors,
+                                         calendar["upcoming"])
 
     return {
         "date": now.strftime("%Y-%m-%d"),
         "collected_at": now.strftime("%Y-%m-%d %H:%M:%S"),
         "market": market,
+        "sectors": sectors,
         "crypto": crypto,
         "stocks": stocks,
         "movers": movers,
@@ -164,13 +173,26 @@ def print_report(payload: dict) -> None:
 
     _print_section("지수", payload["market"]["indices"], with_points=True)
     _print_section("매크로", payload["market"]["macros"], with_points=True)
+    _print_section("섹터 (강→약)", payload.get("sectors", []), with_points=False)
     _print_section("암호화폐 (USD)", payload["crypto"], with_points=False)
     _print_section("주요 종목", payload.get("stocks", []), with_points=True)
     movers = payload.get("movers") or {}
+    _print_breadth(movers.get("breadth"))
     _print_section("오늘의 무버 · 상승", movers.get("gainers", []), with_points=True)
     _print_section("오늘의 무버 · 하락", movers.get("losers", []), with_points=True)
     _print_calendar(payload)
     print()
+
+
+def _print_breadth(breadth: dict | None) -> None:
+    """시장 폭(감시 유니버스 상승/하락 비율)을 한 줄로 출력한다."""
+    if not breadth:
+        return
+    avg = breadth["avg_change_pct"] + 0.0
+    color = GREEN if avg >= 0 else RED
+    print(f"\n[시장 폭] {breadth['total']}종목 중 상승 {breadth['up']} / 하락 "
+          f"{breadth['down']} (상승 {breadth['up_pct']:.0f}%) · 평균 "
+          f"{color}{avg:+.2f}%{RESET}")
 
 
 # 예상 대비 상회/하회 라벨 (콘솔용)

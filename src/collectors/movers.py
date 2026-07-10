@@ -24,12 +24,35 @@ def _compute_change(closes) -> tuple[float, float, float] | None:
     return current, change, change / previous * 100
 
 
-def collect_movers() -> dict[str, list[dict]]:
-    """감시 리스트를 일괄 조회해 상승 상위 N + 하락 상위 N 종목을 뽑는다.
+def _compute_breadth(rows: list[dict]) -> dict | None:
+    """감시 유니버스 전체 등락으로 시장 폭(breadth)을 집계한다.
 
-    관심 종목(WATCH_TICKERS)은 CP5 섹션에서 이미 다루므로 선정에서 제외한다.
-    반환: {"gainers": [...], "losers": [...]} — 각 항목은
-          {ticker, name, price, change, change_pct} 순수 dict.
+    상승/하락 종목 수·비율과 평균 등락률로 "오늘 시장 전반의 힘"을 한눈에 보여준다.
+    데이터가 없으면 None.
+    """
+    if not rows:
+        return None
+    total = len(rows)
+    up = sum(1 for r in rows if r["change_pct"] > 0)
+    down = sum(1 for r in rows if r["change_pct"] < 0)
+    flat = total - up - down
+    avg = sum(r["change_pct"] for r in rows) / total
+    return {
+        "total": total,
+        "up": up,
+        "down": down,
+        "flat": flat,
+        "up_pct": round(up / total * 100, 1),
+        "avg_change_pct": round(avg, 2),
+    }
+
+
+def collect_movers() -> dict:
+    """감시 리스트를 일괄 조회해 상승/하락 상위 N 종목과 시장 폭을 함께 뽑는다.
+
+    관심 종목(WATCH_TICKERS)은 CP5 섹션에서 이미 다루므로 무버 선정에서만 제외하되,
+    시장 폭(breadth)은 유니버스 전체(관심주 포함)를 대상으로 집계한다.
+    반환: {"gainers": [...], "losers": [...], "breadth": {...}|None}.
     개별 티커 데이터 이상은 건너뛰고, 전체 조회 실패 시에만 예외를 던진다.
     """
     symbols = list(MOVER_UNIVERSE)
@@ -39,11 +62,9 @@ def collect_movers() -> dict[str, list[dict]]:
     if data.empty:
         raise RuntimeError("무버 감시 리스트 일괄 조회 결과가 비어 있음")
 
-    rows: list[dict] = []
+    all_rows: list[dict] = []  # 유니버스 전체 (breadth 용)
     available = {col[0] for col in data.columns}  # 실제로 응답에 포함된 티커
     for symbol in symbols:
-        if symbol in WATCH_TICKERS:  # 관심주는 CP5 섹션과 중복되므로 제외
-            continue
         if symbol not in available:
             print(f"[경고] 무버 후보 {symbol} 응답 없음, 건너뜀")
             continue
@@ -55,7 +76,7 @@ def collect_movers() -> dict[str, list[dict]]:
         if computed is None:
             continue
         current, change, change_pct = computed
-        rows.append({
+        all_rows.append({
             "ticker": symbol,
             "name": MOVER_UNIVERSE[symbol],
             "price": round(current, 2),
@@ -63,7 +84,11 @@ def collect_movers() -> dict[str, list[dict]]:
             "change_pct": round(change_pct, 2),
         })
 
+    breadth = _compute_breadth(all_rows)
+
+    # 무버 선정: 관심주(WATCH_TICKERS)는 CP5 섹션과 중복되므로 제외
+    rows = [r for r in all_rows if r["ticker"] not in WATCH_TICKERS]
     rows.sort(key=lambda r: r["change_pct"], reverse=True)
     gainers = [r for r in rows if r["change_pct"] > 0][:MOVERS_TOP_N]
     losers = [r for r in rows if r["change_pct"] < 0][-MOVERS_TOP_N:][::-1]  # 많이 내린 순
-    return {"gainers": gainers, "losers": losers}
+    return {"gainers": gainers, "losers": losers, "breadth": breadth}

@@ -38,6 +38,24 @@ MACRO_TICKERS: dict[str, str] = {
 }
 
 # ---------------------------------------------------------------------------
+# 섹터 로테이션 (SPDR S&P 11개 섹터 ETF 심볼 → 한글 표시명)
+# 개별 종목보다 상위 관점에서 "오늘 돈이 어느 섹터로 움직였나"를 보여준다.
+# ---------------------------------------------------------------------------
+SECTOR_TICKERS: dict[str, str] = {
+    "XLK": "기술",
+    "XLC": "커뮤니케이션",
+    "XLY": "자유소비재",
+    "XLF": "금융",
+    "XLV": "헬스케어",
+    "XLI": "산업재",
+    "XLP": "필수소비재",
+    "XLE": "에너지",
+    "XLB": "소재",
+    "XLU": "유틸리티",
+    "XLRE": "부동산",
+}
+
+# ---------------------------------------------------------------------------
 # 관심 종목 (yfinance/Finnhub 심볼 → 한글 표시명)
 # ---------------------------------------------------------------------------
 WATCH_TICKERS: dict[str, str] = {
@@ -146,6 +164,7 @@ FINNHUB_NEWS_URL: str = "https://finnhub.io/api/v1/news"
 NEWS_CATEGORIES: list[str] = ["general", "forex", "crypto"]
 NEWS_RECENT_HOURS: int = 24  # 이 시간 이내 기사만 사용
 NEWS_MAX_ITEMS: int = 30     # Claude 입력 토큰 절약을 위해 상위 N개만
+NEWS_DISPLAY_MAX: int = 6    # 브리핑 HTML 에 실제로 노출할 헤드라인 개수
 
 # 종목별 뉴스 (Finnhub company-news)
 FINNHUB_COMPANY_NEWS_URL: str = "https://finnhub.io/api/v1/company-news"

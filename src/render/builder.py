@@ -8,7 +8,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from config import DATA_DIR
+from config import DATA_DIR, NEWS_DISPLAY_MAX
 
 # 경로 상수
 BASE_DIR: Path = Path(__file__).resolve().parents[2]
@@ -93,6 +93,37 @@ def _shape_crypto_row(row: dict) -> dict:
     }
 
 
+def _shape_breadth(breadth: dict | None) -> dict | None:
+    """시장 폭(breadth) 집계를 템플릿용 뷰모델로 변환한다. 없으면 None."""
+    if not breadth:
+        return None
+    avg = breadth.get("avg_change_pct")
+    return {
+        "total": breadth.get("total"),
+        "up": breadth.get("up"),
+        "down": breadth.get("down"),
+        "flat": breadth.get("flat"),
+        "up_pct": breadth.get("up_pct"),
+        "avg_change_pct": _fmt_signed(avg, "%"),
+        "direction": _direction(avg),
+    }
+
+
+def _shape_news(articles: list[dict] | None) -> list[dict]:
+    """시장 뉴스에서 상위 N개 헤드라인을 표시용(제목·출처·링크)으로 정리한다."""
+    shaped: list[dict] = []
+    for a in (articles or [])[:NEWS_DISPLAY_MAX]:
+        headline = (a.get("headline") or "").strip()
+        if not headline:
+            continue
+        shaped.append({
+            "headline": headline,
+            "source": a.get("source") or "",
+            "url": a.get("url") or "",
+        })
+    return shaped
+
+
 def _shape_calendar_today(event: dict) -> dict:
     """오늘 발표된 지표 한 건을 템플릿용 뷰모델로 변환한다. (None 값은 '-' 로)"""
     return {
@@ -130,6 +161,12 @@ def build_context(payload: dict) -> dict:
         "collected_at": payload.get("collected_at", ""),
         "indices": [_shape_market_row(r, with_points=True) for r in market.get("indices", [])],
         "macros": [_shape_market_row(r, with_points=True) for r in market.get("macros", [])],
+        # 섹터: 표시 항목이 이름·현재가·등락률이라 암호화폐 뷰모델 재사용 (수집기가 등락률순 정렬)
+        "sectors": [_shape_crypto_row(r) for r in payload.get("sectors", [])],
+        # 시장 폭 (감시 유니버스 상승/하락 비율)
+        "breadth": _shape_breadth(movers.get("breadth")),
+        # 주요 뉴스 헤드라인 (실제 노출)
+        "news": _shape_news(payload.get("news", [])),
         "crypto": [_shape_crypto_row(r) for r in payload.get("crypto", [])],
         # 관심 종목: 표시 항목이 암호화폐와 같아(이름·현재가·등락률) 같은 뷰모델을 쓴다
         "stocks": [_shape_crypto_row(r) for r in payload.get("stocks", [])],

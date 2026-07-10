@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import yfinance as yf
 
-from config import INDEX_TICKERS, MACRO_TICKERS
+from config import INDEX_TICKERS, MACRO_TICKERS, SECTOR_TICKERS
 
 
 def _fetch_ticker(symbol: str, name: str) -> dict:
@@ -54,3 +54,13 @@ def collect_indices() -> list[dict]:
 def collect_macros() -> list[dict]:
     """매크로 티커를 수집한다."""
     return _collect(MACRO_TICKERS)
+
+
+def collect_sectors() -> list[dict]:
+    """S&P 11개 섹터 ETF 등락을 수집해 등락률 내림차순으로 정렬해 반환한다.
+
+    상위 = 오늘 강했던 섹터, 하위 = 약했던 섹터 (섹터 로테이션 관점).
+    """
+    rows = _collect(SECTOR_TICKERS)
+    rows.sort(key=lambda r: (r.get("change_pct") is None, -(r.get("change_pct") or 0.0)))
+    return rows
