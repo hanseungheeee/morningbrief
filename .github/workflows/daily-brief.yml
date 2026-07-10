@@ -1,0 +1,76 @@
+name: Daily morning-brief (수집→해설→텔레그램→Pages)
+
+# 매일 07:00 KST 에 브리핑 파이프라인 전체를 GitHub 서버에서 실행한다.
+# (기존 launchd/맥 로컬 실행을 대체 — 맥 전원/네트워크 상태와 무관하게 발송)
+on:
+  schedule:
+    # cron 은 UTC 기준. 22:00 UTC = 07:00 KST (다음날).
+    # 매일 실행. 미국 개장일(화~토 KST)만 원하면 아래로 교체: '0 22 * * 1-5'
+    - cron: "0 22 * * *"
+  workflow_dispatch: {}   # 수동 실행(테스트)도 허용
+
+# output/ 을 커밋(contents:write)하고 Pages 를 배포(pages/id-token)하기 위한 권한
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# 기존 deploy-pages.yml 과 같은 그룹으로 묶어 Pages 동시 배포 충돌 방지
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  brief:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      # 브리핑 날짜(datetime.now())를 KST 로 찍기 위해 타임존 고정
+      TZ: Asia/Seoul
+      # config.py 가 os.getenv() 로 읽는 값들 — repo Secrets 에서 주입
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      GITHUB_PAGES_URL: ${{ secrets.GITHUB_PAGES_URL }}
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 파이썬 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 의존성 설치
+        run: pip install -r requirements.txt
+
+      - name: 파이프라인 실행 (수집→해설→JSON→HTML→텔레그램)
+        run: python run.py
+
+      - name: output/ 변경분 커밋·푸시 (아카이브 보존용)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output/
+          if git diff --cached --quiet; then
+            echo "output 변경 없음 — 커밋 생략"
+          else
+            git commit -m "brief: $(date '+%Y-%m-%d')"
+            git push origin main
+          fi
+
+      - name: Pages 설정
+        uses: actions/configure-pages@v5
+
+      - name: output/ 을 Pages 아티팩트로 업로드
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./output
+
+      - name: Pages 배포
+        id: deployment
+        uses: actions/deploy-pages@v4
