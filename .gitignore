@@ -17,6 +17,10 @@ data/*.json
 logs/
 
 # output/ 은 GitHub Pages 서빙 대상이므로 커밋한다 (index.html 등 포함)
+# 단, 낭독 mp3 는 매일 재생성되는 바이너리라 저장소 비대화 방지를 위해 커밋하지 않는다.
+# (daily-brief 워크플로가 디스크의 output/ 을 그대로 Pages 아티팩트로 업로드하므로 배포엔 포함됨.
+#  템플릿만 수동 push 하는 deploy-pages 배포 땐 mp3 가 없어 Web Speech 로 폴백한다.)
+output/tts/
 
 # Claude Code 세션 설정 (개인 환경용)
 .claude/

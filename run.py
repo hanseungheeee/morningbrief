@@ -224,9 +224,9 @@ def _print_calendar(payload: dict) -> None:
             print(f"  {e['date']}({e['weekday']})  {e['name']}{cons}")
 
 
-def render_step() -> None:
-    """가장 최근 JSON을 읽어 HTML 브리핑을 생성한다."""
-    index_path, archive_path = render()
+def render_step(with_tts: bool = True) -> None:
+    """가장 최근 JSON을 읽어 HTML 브리핑을 생성한다. (with_tts 면 mp3 낭독도 합성)"""
+    index_path, archive_path = render(with_tts=with_tts)
     print(f"HTML 생성: {index_path}")
     print(f"아카이브 : {archive_path}")
 
@@ -248,6 +248,11 @@ def main() -> None:
         action="store_true",
         help="텔레그램 알림 없이 실행 (테스트용)",
     )
+    parser.add_argument(
+        "--no-tts",
+        action="store_true",
+        help="Google TTS mp3 합성 없이 렌더 (API 호출 절약, 브라우저 Web Speech 폴백)",
+    )
     args = parser.parse_args()
 
     payload = None
@@ -258,8 +263,8 @@ def main() -> None:
         print_report(payload)
         print(f"저장 완료: {path}")
 
-    # 렌더링 단계
-    render_step()
+    # 렌더링 단계 (--no-tts 면 mp3 합성 생략)
+    render_step(with_tts=not args.no_tts)
 
     # 알림 단계 (전체 파이프라인 실행 시에만, --no-notify 면 건너뜀)
     if payload is not None and not args.no_notify:

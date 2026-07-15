@@ -251,3 +251,15 @@ GEMINI_MAX_TOKENS: int = 4096
 # Telegram 알림
 # ---------------------------------------------------------------------------
 TELEGRAM_API_URL: str = "https://api.telegram.org"
+
+# ---------------------------------------------------------------------------
+# Gemini TTS (해설 낭독 오디오). 커멘터리와 같은 GEMINI_API_KEY 를 재사용한다.
+# (Cloud Text-to-Speech 는 API 키를 안 받아 서비스계정이 필요하므로 Gemini TTS 로 간다.)
+# ---------------------------------------------------------------------------
+GEMINI_TTS_MODEL: str = os.getenv("GEMINI_TTS_MODEL") or "gemini-2.5-flash-preview-tts"
+# 프리빌트 음성명. 언제든 교체 가능.
+#   여성: Kore(단단함)/Aoede(경쾌)/Leda(젊음)/Callirrhoe(느긋)
+#   남성: Charon(정보전달)/Puck(활기)/Fenrir/Orus
+GEMINI_TTS_VOICE: str = os.getenv("GEMINI_TTS_VOICE") or "Kore"
+# Gemini TTS 는 24kHz·16bit·mono PCM 을 반환 → WAV 로 감싼다.
+GEMINI_TTS_SAMPLE_RATE: int = 24000

@@ -9,6 +9,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from config import DATA_DIR, NEWS_DISPLAY_MAX
+from src.notify.tts_google import generate_tts
 
 # 경로 상수
 BASE_DIR: Path = Path(__file__).resolve().parents[2]
@@ -150,8 +151,12 @@ def _shape_calendar_upcoming(event: dict) -> dict:
     }
 
 
-def build_context(payload: dict) -> dict:
-    """수집 JSON을 템플릿 렌더링 컨텍스트로 가공한다."""
+def build_context(payload: dict, tts_audio: dict | None = None) -> dict:
+    """수집 JSON을 템플릿 렌더링 컨텍스트로 가공한다.
+
+    tts_audio: {data-tts-key: mp3 상대경로} 매니페스트. None 이면 템플릿이
+    <audio> 엔진을 끄고 브라우저 Web Speech 로 폴백한다.
+    """
     market = payload.get("market", {})
     movers = payload.get("movers") or {}
     # 해설은 있으면 그대로, 없으면(None) 빈 dict → 템플릿이 블록을 숨김
@@ -177,20 +182,22 @@ def build_context(payload: dict) -> dict:
         "calendar_today": [_shape_calendar_today(e) for e in payload.get("calendar_today", [])],
         "calendar_upcoming": [_shape_calendar_upcoming(e) for e in payload.get("calendar_upcoming", [])],
         "commentary": commentary,
+        # 낭독 mp3 매니페스트 (없으면 None → Web Speech 폴백)
+        "tts_audio": tts_audio,
     }
 
 
 # ---------------------------------------------------------------------------
 # 렌더 / 저장
 # ---------------------------------------------------------------------------
-def render_html(payload: dict) -> str:
+def render_html(payload: dict, tts_audio: dict | None = None) -> str:
     """Jinja2 템플릿으로 HTML 문자열을 만든다."""
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATE_DIR)),
         autoescape=select_autoescape(["html", "j2"]),
     )
     template = env.get_template("brief.html.j2")
-    return template.render(**build_context(payload))
+    return template.render(**build_context(payload, tts_audio=tts_audio))
 
 
 def save_html(html: str, date: str) -> tuple[str, str]:
@@ -206,8 +213,13 @@ def save_html(html: str, date: str) -> tuple[str, str]:
     return str(index_path), str(archive_path)
 
 
-def render(date: str | None = None) -> tuple[str, str]:
-    """JSON 로드 → HTML 렌더 → 저장까지 한 번에. 저장 경로 두 개를 반환한다."""
+def render(date: str | None = None, with_tts: bool = True) -> tuple[str, str]:
+    """JSON 로드 → (선택)mp3 합성 → HTML 렌더 → 저장까지 한 번에. 저장 경로 두 개를 반환한다.
+
+    with_tts=True 이고 GEMINI_API_KEY 가 있으면 해설 블록을 Gemini TTS 오디오(WAV)로
+    합성해 output/tts/{date}/ 에 저장하고, 그 매니페스트를 페이지에 임베드한다.
+    """
     payload = load_json(date)
-    html = render_html(payload)
+    tts_audio = generate_tts(payload, OUTPUT_DIR) if with_tts else None
+    html = render_html(payload, tts_audio=tts_audio)
     return save_html(html, payload.get("date") or datetime.now().strftime("%Y-%m-%d"))
