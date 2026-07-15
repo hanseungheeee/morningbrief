@@ -52,6 +52,61 @@
   header h1 { font-size: 22px; margin: 4px 0 2px; }
   header .collected { font-size: 12px; color: var(--muted); }
 
+  /* 브리핑 낭독 TTS 플레이어 (sticky) */
+  .tts-bar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 10px;
+    margin-bottom: 20px;
+  }
+  .tts-bar button {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  .tts-bar button:hover:not(:disabled) { border-color: var(--sp-above); }
+  .tts-bar button:disabled { opacity: 0.45; cursor: default; }
+  .tts-bar select {
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 8px;
+  }
+  .tts-bar select:disabled { opacity: 0.45; }
+  .tts-bar .tts-status {
+    font-size: 13px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    min-width: 34px;
+    text-align: center;
+  }
+  .tts-bar .tts-voice { max-width: 150px; }
+  .tts-bar .tts-note { font-size: 12px; color: var(--muted); }
+
+  /* 현재 낭독 중인 블록 강조 */
+  [data-tts].tts-active {
+    outline: 2px solid var(--sp-above);
+    outline-offset: 3px;
+    border-radius: 8px;
+  }
+
   /* 섹션 */
   section { margin-bottom: 22px; }
   section h2 {
@@ -197,9 +252,24 @@
     <div class="collected">수집 시각 {{ collected_at }}</div>
   </header>
 
+  <!-- 브리핑 낭독 플레이어 (JS가 data-tts 블록·speechSynthesis 확인 후 노출) -->
+  <div class="tts-bar" id="tts-bar" hidden>
+    <button type="button" id="tts-toggle">▶ 재생</button>
+    <button type="button" id="tts-stop">■ 정지</button>
+    <span class="tts-status" id="tts-status">0/0</span>
+    <select id="tts-rate" aria-label="낭독 속도">
+      <option value="0.9">0.9배</option>
+      <option value="1.0" selected>1.0배</option>
+      <option value="1.2">1.2배</option>
+      <option value="1.5">1.5배</option>
+    </select>
+    <select id="tts-voice" class="tts-voice" aria-label="음성 선택"></select>
+    <span class="tts-note" id="tts-note" hidden></span>
+  </div>
+
   <!-- 오늘의 장 요약 (해설 있을 때만) -->
   {% if commentary.market_summary or commentary.key_topics %}
-  <div class="summary">
+  <div class="summary" data-tts="">
     <h2>오늘의 장 요약</h2>
     {% if commentary.market_summary %}<p>{{ commentary.market_summary }}</p>{% endif %}
     {% if commentary.key_topics %}
@@ -214,7 +284,7 @@
 
   <!-- 오늘의 관전 포인트 (forward-looking, 해설 있을 때만) -->
   {% if commentary.watch_points %}
-  <div class="watch">
+  <div class="watch" data-tts="">
     <h2>오늘의 관전 포인트</h2>
     <ul>
       {% for wp in commentary.watch_points %}
@@ -237,7 +307,7 @@
       {% endfor %}
     </div>
     {% if commentary.index_comment %}
-    <div class="comment"><span class="tag">해설</span>{{ commentary.index_comment }}</div>
+    <div class="comment" data-tts="주요 지수."><span class="tag">해설</span>{{ commentary.index_comment }}</div>
     {% endif %}
   </section>
 
@@ -277,7 +347,7 @@
       </tbody>
     </table>
     {% if commentary.macro_comment %}
-    <div class="comment"><span class="tag">해설</span>{{ commentary.macro_comment }}</div>
+    <div class="comment" data-tts="매크로 지표."><span class="tag">해설</span>{{ commentary.macro_comment }}</div>
     {% endif %}
   </section>
 
@@ -300,7 +370,7 @@
       </tbody>
     </table>
     {% if commentary.sector_comment %}
-    <div class="comment"><span class="tag">해설</span>{{ commentary.sector_comment }}</div>
+    <div class="comment" data-tts="섹터 흐름."><span class="tag">해설</span>{{ commentary.sector_comment }}</div>
     {% endif %}
   </section>
   {% endif %}
@@ -309,7 +379,7 @@
   {% if commentary.policy_comment %}
   <section>
     <h2>연준·정책</h2>
-    <div class="comment"><span class="tag">해설</span>{{ commentary.policy_comment }}</div>
+    <div class="comment" data-tts="연준 및 정책."><span class="tag">해설</span>{{ commentary.policy_comment }}</div>
   </section>
   {% endif %}
 
@@ -333,7 +403,7 @@
       </tbody>
     </table>
     {% if commentary.calendar_comment %}
-    <div class="comment"><span class="tag">해설</span>{{ commentary.calendar_comment }}</div>
+    <div class="comment" data-tts="오늘의 경제 지표."><span class="tag">해설</span>{{ commentary.calendar_comment }}</div>
     {% endif %}
   </section>
   {% endif %}
@@ -377,7 +447,7 @@
       </tbody>
     </table>
     {% if commentary.crypto_comment %}
-    <div class="comment"><span class="tag">해설</span>{{ commentary.crypto_comment }}</div>
+    <div class="comment" data-tts="암호화폐."><span class="tag">해설</span>{{ commentary.crypto_comment }}</div>
     {% endif %}
   </section>
 
@@ -400,7 +470,7 @@
       </tbody>
     </table>
     {% if commentary.stock_comments %}
-    <ul class="stock-comments">
+    <ul class="stock-comments" data-tts="주요 종목.">
       {% for sc in commentary.stock_comments %}
       <li><span class="ticker-name">{{ sc.name }}</span> — {{ sc.comment }}</li>
       {% endfor %}
@@ -448,7 +518,7 @@
     </table>
     {% endif %}
     {% if commentary.mover_comments %}
-    <ul class="stock-comments">
+    <ul class="stock-comments" data-tts="오늘의 무버.">
       {% for mc in commentary.mover_comments %}
       <li><span class="ticker-name {{ mc.direction }}">{{ mc.name }}</span> — {{ mc.comment }}</li>
       {% endfor %}
@@ -475,5 +545,254 @@
   <footer>미국 증시 아침 브리핑 · 자동 생성</footer>
 
 </div>
+
+<script>
+(function () {
+  'use strict';
+
+  // 7. speechSynthesis 미지원 → 조용히 종료 (바는 hidden 유지)
+  var synth = window.speechSynthesis;
+  var bar = document.getElementById('tts-bar');
+  if (!synth || !bar) return;
+
+  // 낭독 대상: DOM(=querySelectorAll) 순서 그대로
+  var blocks = Array.prototype.slice.call(document.querySelectorAll('[data-tts]'));
+  if (blocks.length === 0) return;  // 산문 블록 0개 → 플레이어 숨김
+
+  var toggleBtn = document.getElementById('tts-toggle');
+  var stopBtn = document.getElementById('tts-stop');
+  var statusEl = document.getElementById('tts-status');
+  var rateSel = document.getElementById('tts-rate');
+  var voiceSel = document.getElementById('tts-voice');
+  var noteEl = document.getElementById('tts-note');
+
+  // 크롬 데스크톱만 keepalive 대상 (사파리/모바일은 오히려 끊김)
+  var ua = navigator.userAgent;
+  var isChromeDesktop = /Chrome/.test(ua) && !/Mobile|Android|iPhone|iPad|iPod/.test(ua);
+
+  // --- 텍스트 정규화 (낭독 직전) ---
+  function normalize(text) {
+    var t = String(text).replace(/\s+/g, ' ').trim();
+    t = t.replace(/%/g, ' 퍼센트');
+    t = t.replace(/\$/g, ' 달러');
+    t = t.replace(/[▲▼]/g, '');            // ▲ ▼ 제거
+    t = t.replace(/\+(?=\s*\d)/g, ' 플러스 ');        // 숫자 앞 +
+    t = t.replace(/-(?=\s*\d)/g, ' 마이너스 ');        // 숫자 앞 -
+    t = t.replace(/\s+/g, ' ').trim();
+    return t;
+  }
+
+  // 1. 청크 분할: 문장 단위(lookbehind 미사용) + 200자 초과 시 공백 기준 추가 분할
+  function chunkText(text) {
+    var sentences = text.match(/[^.!?]+[.!?]*\s*/g) || [text];
+    var out = [];
+    for (var i = 0; i < sentences.length; i++) {
+      var s = sentences[i].trim();
+      if (!s) continue;
+      if (s.length <= 200) { out.push(s); continue; }
+      var words = s.split(' ');
+      var cur = '';
+      for (var j = 0; j < words.length; j++) {
+        var next = cur ? cur + ' ' + words[j] : words[j];
+        if (next.length > 200 && cur) {
+          out.push(cur);
+          cur = words[j];
+        } else {
+          cur = next;
+        }
+      }
+      if (cur) out.push(cur);
+    }
+    return out;
+  }
+
+  // 블록별 낭독 계획: 각 청크가 어느 블록에 속하는지 기록
+  var plan = [];
+  blocks.forEach(function (block, bi) {
+    var prefix = block.getAttribute('data-tts') || '';
+    var full = (prefix ? prefix + ' ' : '') + block.textContent;
+    var chunks = chunkText(normalize(full));
+    if (chunks.length === 0) chunks = [prefix || ' '];
+    chunks.forEach(function (c) { plan.push({ text: c, blockIndex: bi }); });
+  });
+
+  var pos = 0;
+  var playing = false;
+  var currentVoice = null;
+  var koVoices = [];
+  var keepalive = null;
+
+  function startKeepalive() {
+    if (!isChromeDesktop) return;
+    stopKeepalive();
+    keepalive = setInterval(function () {
+      if (synth.speaking && !synth.paused) {
+        synth.pause();
+        synth.resume();
+      }
+    }, 10000);
+  }
+  function stopKeepalive() {
+    if (keepalive) { clearInterval(keepalive); keepalive = null; }
+  }
+
+  function clearActive() {
+    blocks.forEach(function (b) { b.classList.remove('tts-active'); });
+  }
+  function activateBlock(bi) {
+    clearActive();
+    var b = blocks[bi];
+    if (b) {
+      b.classList.add('tts-active');
+      b.scrollIntoView({ block: 'center' });
+    }
+    statusEl.textContent = (bi + 1) + '/' + blocks.length;
+  }
+
+  function setPlayingUI(isPlaying) {
+    toggleBtn.textContent = isPlaying ? '⏸ 일시정지' : '▶ 재생';
+  }
+
+  function speakCurrent() {
+    if (pos >= plan.length) { finish(); return; }
+    var item = plan[pos];
+    // 새 블록 진입 시 강조 + 상태 갱신
+    if (pos === 0 || plan[pos - 1].blockIndex !== item.blockIndex) {
+      activateBlock(item.blockIndex);
+    }
+    var u = new SpeechSynthesisUtterance(item.text);
+    u.lang = (currentVoice && currentVoice.lang) || 'ko-KR';
+    if (currentVoice) u.voice = currentVoice;
+    u.rate = parseFloat(rateSel.value) || 1.0;
+    u.onend = function () {
+      if (!playing) return;
+      pos += 1;
+      speakCurrent();
+    };
+    u.onerror = function () {
+      if (!playing) return;   // cancel()로 인한 오류는 무시
+      pos += 1;
+      speakCurrent();
+    };
+    synth.speak(u);
+  }
+
+  function finish() {
+    playing = false;
+    stopKeepalive();
+    clearActive();
+    setPlayingUI(false);
+    pos = 0;
+    statusEl.textContent = '완료';
+  }
+
+  // 5. iOS 사파리: speak()는 사용자 제스처(클릭) 안에서 첫 호출돼야 함
+  function play() {
+    if (!currentVoice) return;
+    if (playing && synth.paused) {           // 일시정지 → 재개
+      synth.resume();
+      setPlayingUI(true);
+      startKeepalive();
+      return;
+    }
+    playing = true;
+    if (synth.speaking || synth.pending) synth.cancel();
+    if (pos >= plan.length) pos = 0;
+    setPlayingUI(true);
+    startKeepalive();
+    speakCurrent();                          // 클릭 핸들러 내 동기 호출
+  }
+
+  function pauseTts() {
+    synth.pause();
+    setPlayingUI(false);
+    stopKeepalive();
+  }
+
+  function stopTts() {
+    playing = false;
+    synth.cancel();
+    stopKeepalive();
+    pos = 0;
+    clearActive();
+    setPlayingUI(false);
+    statusEl.textContent = '0/' + blocks.length;
+  }
+
+  toggleBtn.addEventListener('click', function () {
+    if (playing && synth.speaking && !synth.paused) {
+      pauseTts();
+    } else {
+      play();
+    }
+  });
+  stopBtn.addEventListener('click', stopTts);
+
+  rateSel.addEventListener('change', function () {
+    // 재생 중이면 다음 청크부터 새 속도 적용 (현재 청크는 유지)
+    rateSel.blur();
+  });
+
+  voiceSel.addEventListener('change', function () {
+    for (var i = 0; i < koVoices.length; i++) {
+      if (koVoices[i].voiceURI === voiceSel.value) { currentVoice = koVoices[i]; break; }
+    }
+  });
+
+  // 3. voices 비동기 로딩: getVoices()가 처음엔 빈 배열 → onvoiceschanged로 재구성
+  function refreshVoices() {
+    var all = synth.getVoices() || [];
+    // 4. lang이 'ko'로 시작하는 음성만
+    koVoices = all.filter(function (v) { return /^ko/i.test(v.lang); });
+
+    if (koVoices.length === 0) {
+      // 4. 한국어 음성 없음 → 안내 후 비활성화
+      noteEl.textContent = '이 브라우저는 한국어 음성이 없습니다';
+      noteEl.hidden = false;
+      voiceSel.hidden = true;
+      toggleBtn.disabled = true;
+      stopBtn.disabled = true;
+      rateSel.disabled = true;
+      currentVoice = null;
+      return;
+    }
+
+    noteEl.hidden = true;
+    voiceSel.hidden = false;
+    toggleBtn.disabled = false;
+    stopBtn.disabled = false;
+    rateSel.disabled = false;
+
+    voiceSel.innerHTML = '';
+    koVoices.forEach(function (v) {
+      var opt = document.createElement('option');
+      opt.value = v.voiceURI;
+      opt.textContent = v.name + ' (' + v.lang + ')';
+      voiceSel.appendChild(opt);
+    });
+
+    // 기존 선택 유지, 없으면 첫 번째를 기본값
+    var keep = null;
+    if (currentVoice) {
+      for (var i = 0; i < koVoices.length; i++) {
+        if (koVoices[i].voiceURI === currentVoice.voiceURI) { keep = koVoices[i]; break; }
+      }
+    }
+    currentVoice = keep || koVoices[0];
+    voiceSel.value = currentVoice.voiceURI;
+  }
+
+  // 초기화
+  statusEl.textContent = '0/' + blocks.length;
+  bar.hidden = false;                        // 블록 있고 지원됨 → 노출
+  refreshVoices();
+  if (typeof synth.onvoiceschanged !== 'undefined') {
+    synth.onvoiceschanged = refreshVoices;
+  }
+
+  // 6. 페이지 이탈 시 낭독 중단 (안 그러면 음성이 계속 남음)
+  window.addEventListener('pagehide', function () { synth.cancel(); });
+})();
+</script>
 </body>
 </html>
