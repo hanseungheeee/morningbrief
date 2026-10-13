@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>미국 증시 아침 브리핑 - 2026-10-13</title>
+<style>
+  /* 한국식 등락 색상: 상승=빨강, 하락=파랑, 보합=회색 */
+  :root {
+    --up: #e01e1e;
+    --down: #1560d0;
+    --flat: #888;
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --muted: #666;
+    --border: #e3e5e9;
+    /* 경제지표 예상 대비: 상회=주황, 하회=청록 (등락 색과 구분해 호/악재 오해 방지) */
+    --sp-above: #c9761d;
+    --sp-below: #2f8f83;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --up: #ff5b5b;
+      --down: #5b9bff;
+      --flat: #999;
+      --bg: #15171c;
+      --card: #1f2229;
+      --text: #f0f0f2;
+      --muted: #9aa0aa;
+      --border: #2c3038;
+      --sp-above: #e0913f;
+      --sp-below: #4bb3a5;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; }
+
+  /* 헤더 */
+  header { text-align: center; margin-bottom: 20px; }
+  header .date { font-size: 14px; color: var(--muted); }
+  header h1 { font-size: 22px; margin: 4px 0 2px; }
+  header .collected { font-size: 12px; color: var(--muted); }
+
+  /* 브리핑 낭독 TTS 플레이어 (sticky) */
+  .tts-bar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 10px;
+    margin-bottom: 20px;
+  }
+  .tts-bar button {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  .tts-bar button:hover:not(:disabled) { border-color: var(--sp-above); }
+  .tts-bar button:disabled { opacity: 0.45; cursor: default; }
+  .tts-bar select {
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 8px;
+  }
+  .tts-bar select:disabled { opacity: 0.45; }
+  .tts-bar .tts-status {
+    font-size: 13px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    min-width: 34px;
+    text-align: center;
+  }
+  .tts-bar .tts-voice { max-width: 150px; }
+  .tts-bar .tts-note { font-size: 12px; color: var(--muted); }
+
+  /* 현재 낭독 중인 블록 강조 */
+  [data-tts].tts-active {
+    outline: 2px solid var(--sp-above);
+    outline-offset: 3px;
+    border-radius: 8px;
+  }
+
+  /* 섹션 */
+  section { margin-bottom: 22px; }
+  section h2 {
+    font-size: 15px;
+    margin: 0 0 10px;
+    padding-left: 8px;
+    border-left: 4px solid var(--text);
+  }
+
+  /* 지수 카드 그리드 */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .card .label { font-size: 13px; color: var(--muted); }
+  .card .price { font-size: 20px; font-weight: 700; margin: 4px 0 2px; }
+  .card .chg { font-size: 13px; font-weight: 600; }
+
+  /* 표 (매크로·암호화폐) */
+  table { width: 100%; border-collapse: collapse; background: var(--card);
+          border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  th, td { padding: 11px 14px; text-align: right; font-size: 14px; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { font-size: 12px; color: var(--muted); font-weight: 600;
+             border-bottom: 1px solid var(--border); }
+  tbody tr + tr td { border-top: 1px solid var(--border); }
+  td .name { color: var(--text); }
+  td .price { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  /* 등락 색상 */
+  .up { color: var(--up); }
+  .down { color: var(--down); }
+  .flat { color: var(--flat); }
+
+  /* 오늘의 장 요약 블록 */
+  .summary {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 22px;
+  }
+  .summary h2 { font-size: 15px; margin: 0 0 8px; }
+  .summary p { margin: 0 0 10px; font-size: 14px; }
+  .summary ul { margin: 0; padding-left: 18px; }
+  .summary li { font-size: 13px; color: var(--muted); margin: 3px 0; }
+
+  /* 섹션별 해설 (카드/표와 시각적으로 구분: 옅은 배경 + 작은 글씨 + 라벨) */
+  .comment {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: rgba(127, 127, 127, 0.08);
+    border-left: 3px solid var(--flat);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .comment .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    margin-right: 6px;
+  }
+
+  /* 종목 코멘트 목록 (표 아래, 작은 글씨) */
+  .stock-comments {
+    margin: 10px 0 0;
+    padding-left: 18px;
+  }
+  .stock-comments li {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 4px 0;
+  }
+  .stock-comments .ticker-name { font-weight: 700; color: var(--text); }
+  .stock-comments .ticker-name.up { color: var(--up); }
+  .stock-comments .ticker-name.down { color: var(--down); }
+
+  /* 경제지표 예상 대비 배지 */
+  .badge { font-size: 11px; font-weight: 700; margin-left: 6px; white-space: nowrap; }
+  .badge.above { color: var(--sp-above); }
+  .badge.below { color: var(--sp-below); }
+  .badge.inline { color: var(--flat); }
+  /* 예정 일정 날짜 셀 */
+  td.cal-date { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.cal-cons { color: var(--muted); }
+
+  /* 무버 상승/하락 소제목 */
+  .mover-caption {
+    font-size: 12px;
+    font-weight: 700;
+    margin: 12px 0 6px;
+  }
+  .mover-caption:first-of-type { margin-top: 0; }
+
+  /* 오늘의 관전 포인트 (forward-looking) */
+  .watch {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--sp-above);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 22px;
+  }
+  .watch h2 { font-size: 15px; margin: 0 0 8px; border: none; padding: 0; }
+  .watch ul { margin: 0; padding-left: 18px; }
+  .watch li { font-size: 13.5px; margin: 5px 0; }
+
+  /* 시장 폭 (breadth) */
+  .breadth {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px;
+  }
+  .breadth .bar { display: flex; height: 10px; border-radius: 5px;
+                  overflow: hidden; margin: 9px 0 7px; background: var(--border); }
+  .breadth .bar .up-seg { background: var(--up); }
+  .breadth .bar .down-seg { background: var(--down); }
+  .breadth .meta { font-size: 13px; color: var(--muted);
+                   display: flex; justify-content: space-between; gap: 8px; }
+  .breadth .meta .avg { font-weight: 700; }
+
+  /* 주요 뉴스 목록 */
+  .news-list { list-style: none; margin: 0; padding: 0 4px; }
+  .news-list li { padding: 10px 0; border-top: 1px solid var(--border); font-size: 13.5px; }
+  .news-list li:first-child { border-top: none; }
+  .news-list a { color: var(--text); text-decoration: none; }
+  .news-list a:hover { text-decoration: underline; }
+  .news-list .src { display: block; font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="date">2026-10-13</div>
+    <h1>미국 증시 아침 브리핑</h1>
+    <div class="collected">수집 시각 2026-10-13 11:49:44</div>
+  </header>
+
+  <!-- 브리핑 낭독 플레이어 (JS가 data-tts 블록·speechSynthesis 확인 후 노출) -->
+  <div class="tts-bar" id="tts-bar" hidden>
+    <button type="button" id="tts-toggle">▶ 재생</button>
+    <button type="button" id="tts-stop">■ 정지</button>
+    <span class="tts-status" id="tts-status">0/0</span>
+    <select id="tts-rate" aria-label="낭독 속도">
+      <option value="0.9">0.9배</option>
+      <option value="1.0" selected>1.0배</option>
+      <option value="1.2">1.2배</option>
+      <option value="1.5">1.5배</option>
+    </select>
+    <select id="tts-voice" class="tts-voice" aria-label="음성 선택"></select>
+    <span class="tts-note" id="tts-note" hidden></span>
+  </div>
+  
+  <script type="application/json" id="tts-manifest">{"crypto": "tts/2026-10-13/crypto.wav", "index": "tts/2026-10-13/index.wav", "macro": "tts/2026-10-13/macro.wav", "mover": "tts/2026-10-13/mover.wav", "policy": "tts/2026-10-13/policy.wav", "sector": "tts/2026-10-13/sector.wav", "stock": "tts/2026-10-13/stock.wav", "summary": "tts/2026-10-13/summary.wav", "watch": "tts/2026-10-13/watch.wav"}</script>
+  
+
+  <!-- 오늘의 장 요약 (해설 있을 때만) -->
+  
+  <div class="summary" data-tts="" data-tts-key="summary">
+    <h2>오늘의 장 요약</h2>
+    <p>미국 증시는 AI 산업의 성장 격차와 암호화폐 시장의 혼조세 속에서 주요 지수가 엇갈린 흐름을 보였습니다. IMF는 AI가 세계 성장의 불균형을 심화시킬 수 있다고 경고했으며, 이는 기술주 전반에 대한 신중론으로 이어지는 모습입니다. 반면 메타는 새로운 AI 모델의 경쟁력을 주장하며 강세를 보였고, 에너지 섹터는 유가 상승에 힘입어 상대적으로 견조한 흐름을 유지했습니다. 전반적으로 AI 산업 내에서도 종목별 희비가 엇갈리는 하루였습니다.</p>
+    
+    <ul>
+      
+      <li>IMF, AI로 인한 글로벌 성장 격차 확대 경고</li>
+      
+      <li>메타, 신규 AI 모델 경쟁력 주장하며 강세</li>
+      
+      <li>기술주 전반 약세 속 개별 종목 희비</li>
+      
+      <li>유가 상승과 에너지 섹터 강세</li>
+      
+    </ul>
+    
+  </div>
+  
+
+  <!-- 오늘의 관전 포인트 (forward-looking, 해설 있을 때만) -->
+  
+  <div class="watch" data-tts="" data-tts-key="watch">
+    <h2>오늘의 관전 포인트</h2>
+    <ul>
+      
+      <li>10월 14일(수) FOMC Barkin 위원 연설 — 향후 통화 정책 방향 관련 단서 주목</li>
+      
+      <li>10월 15일(목) Core CPI 및 CPI 발표 — 인플레이션 압력 및 금리 인하 기대 변화 여부</li>
+      
+      <li>10월 16일(금) Core PPI 및 Initial Jobless Claims 발표 — 생산자 물가와 고용 시장 동향 파악</li>
+      
+    </ul>
+  </div>
+  
+
+  <!-- 섹션1: 3대 지수 + 러셀2000 -->
+  <section>
+    <h2>주요 지수</h2>
+    <div class="cards">
+      
+      <div class="card">
+        <div class="label">S&amp;P 500</div>
+        <div class="price">7,807.24</div>
+        <div class="chg down">-0.06% (-4.30)</div>
+      </div>
+      
+      <div class="card">
+        <div class="label">나스닥</div>
+        <div class="price">27,245.90</div>
+        <div class="chg down">-0.44% (-120.27)</div>
+      </div>
+      
+      <div class="card">
+        <div class="label">다우</div>
+        <div class="price">51,850.55</div>
+        <div class="chg up">+0.38% (+195.60)</div>
+      </div>
+      
+      <div class="card">
+        <div class="label">러셀 2000</div>
+        <div class="price">2,794.48</div>
+        <div class="chg down">-0.45% (-12.50)</div>
+      </div>
+      
+    </div>
+    
+    <div class="comment" data-tts="주요 지수." data-tts-key="index"><span class="tag">해설</span>다우 지수는 상승한 반면 S&amp;P 500과 나스닥 지수는 하락하며 혼조세를 나타냈습니다. 특히 기술주 중심의 나스닥과 러셀 2000이 약세를 보이며 시장 전반의 방향성을 찾지 못하는 모습이었습니다.</div>
+    
+  </section>
+
+  <!-- 시장 폭: 감시 유니버스 상승/하락 비율 (데이터 있을 때만) -->
+  
+  <section>
+    <h2>시장 폭</h2>
+    <div class="breadth">
+      <div class="bar">
+        <div class="up-seg" style="width: 52.3%"></div>
+        <div class="down-seg" style="width: 47.7%"></div>
+      </div>
+      <div class="meta">
+        <span>128종목 중 <span class="up">상승 67</span> · <span class="down">하락 60</span> (상승 52.3%)</span>
+        <span class="avg down">평균 -0.19%</span>
+      </div>
+    </div>
+  </section>
+  
+
+  <!-- 섹션2: 매크로 지표 -->
+  <section>
+    <h2>매크로 지표</h2>
+    <table>
+      <thead>
+        <tr><th>지표</th><th>현재가</th><th>등락률</th><th>등락폭</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="name">금</span></td>
+          <td class="price">4,197.60</td>
+          <td class="down">-0.44%</td>
+          <td class="down">-18.70</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">WTI 유가</span></td>
+          <td class="price">92.60</td>
+          <td class="up">+0.82%</td>
+          <td class="up">+0.75</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">미 10년물 국채금리</span></td>
+          <td class="price">5.24</td>
+          <td class="down">-0.08%</td>
+          <td class="down">+0.00</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">달러 인덱스</span></td>
+          <td class="price">102.41</td>
+          <td class="up">+0.20%</td>
+          <td class="up">+0.20</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">VIX</span></td>
+          <td class="price">15.21</td>
+          <td class="up">+2.49%</td>
+          <td class="up">+0.37</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+    <div class="comment" data-tts="매크로 지표." data-tts-key="macro"><span class="tag">해설</span>미 10년물 국채금리는 소폭 하락했으나 시장에 큰 영향을 주지는 않았습니다. WTI 유가는 상승하며 에너지 섹터 강세에 기여했으나, 달러 인덱스 및 VIX 지수 상승과 맞물려 투자 심리가 다소 위축된 것으로 보입니다.</div>
+    
+  </section>
+
+  <!-- 섹터 흐름: S&P 11개 섹터 ETF, 강→약 정렬 (데이터 있을 때만) -->
+  
+  <section>
+    <h2>섹터 흐름 (강→약)</h2>
+    <table>
+      <thead>
+        <tr><th>섹터</th><th>ETF 가격</th><th>등락률</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="name">에너지</span></td>
+          <td class="price">66.01</td>
+          <td class="up">+1.43%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">필수소비재</span></td>
+          <td class="price">84.41</td>
+          <td class="up">+1.17%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">커뮤니케이션</span></td>
+          <td class="price">111.45</td>
+          <td class="up">+0.97%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">부동산</span></td>
+          <td class="price">41.92</td>
+          <td class="up">+0.75%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">헬스케어</span></td>
+          <td class="price">171.99</td>
+          <td class="up">+0.69%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">금융</span></td>
+          <td class="price">55.05</td>
+          <td class="up">+0.58%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">유틸리티</span></td>
+          <td class="price">41.63</td>
+          <td class="up">+0.53%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">소재</span></td>
+          <td class="price">49.44</td>
+          <td class="up">+0.02%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">산업재</span></td>
+          <td class="price">169.15</td>
+          <td class="down">-0.06%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">자유소비재</span></td>
+          <td class="price">112.27</td>
+          <td class="down">-0.51%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">기술</span></td>
+          <td class="price">196.36</td>
+          <td class="down">-1.22%</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+    <div class="comment" data-tts="섹터 흐름." data-tts-key="sector"><span class="tag">해설</span>에너지와 필수소비재, 커뮤니케이션 섹터가 강세를 보인 반면, 기술 섹터는 1.22% 하락하며 가장 큰 낙폭을 기록했습니다. 이는 AI 산업 내 경쟁 심화 및 성장 불확실성 속에서 방어적 성격의 섹터와 유가 상승 수혜 섹터로 자금이 이동한 것으로 해석됩니다.</div>
+    
+  </section>
+  
+
+  <!-- 연준·정책 해설 (정책 뉴스가 있는 날만) -->
+  
+  <section>
+    <h2>연준·정책</h2>
+    <div class="comment" data-tts="연준 및 정책." data-tts-key="policy"><span class="tag">해설</span>IMF는 AI가 세계 성장 동력을 특정 32개 국가에 집중시키며 격차를 확대할 수 있다고 경고했습니다. 이는 장기적인 경제 성장과 불균형에 대한 우려를 제기하며 정책 입안자들에게 시사하는 바가 큰 이슈로 해석됩니다. 또한 이번 주 미국 CPI 발표가 예정되어 있어 인플레이션과 관련된 정책 결정에 대한 시장의 경계감이 지속될 것으로 보입니다.</div>
+  </section>
+  
+
+  <!-- 경제 지표: 오늘 발표된 결과 (데이터 있을 때만) -->
+  
+
+  <!-- 경제 지표: 예정 일정 (데이터 있을 때만, 해설 없이 나열) -->
+  
+  <section>
+    <h2>예정 일정</h2>
+    <table>
+      <thead>
+        <tr><th>날짜</th><th>지표</th><th>예상</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td class="cal-date">10/14(수)</td>
+          <td><span class="name">Existing Home Sales</span></td>
+          <td class="cal-cons">3.96M</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/14(수)</td>
+          <td><span class="name">FOMC Member Barkin Speaks</span></td>
+          <td class="cal-cons">-</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/15(목)</td>
+          <td><span class="name">FOMC Member Bowman Speaks</span></td>
+          <td class="cal-cons">-</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/15(목)</td>
+          <td><span class="name">Core CPI</span></td>
+          <td class="cal-cons">0.2%</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/15(목)</td>
+          <td><span class="name">Core CPI Index</span></td>
+          <td class="cal-cons">-</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/15(목)</td>
+          <td><span class="name">CPI</span></td>
+          <td class="cal-cons">0.6%</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/15(목)</td>
+          <td><span class="name">CPI Index, n.s.a.</span></td>
+          <td class="cal-cons">-</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/15(목)</td>
+          <td><span class="name">CPI Index, s.a</span></td>
+          <td class="cal-cons">-</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/15(목)</td>
+          <td><span class="name">CPI, n.s.a</span></td>
+          <td class="cal-cons">-</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/15(목)</td>
+          <td><span class="name">Cleveland CPI</span></td>
+          <td class="cal-cons">-</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/15(목)</td>
+          <td><span class="name">FOMC Member Barkin Speaks</span></td>
+          <td class="cal-cons">-</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/16(금)</td>
+          <td><span class="name">Continuing Jobless Claims</span></td>
+          <td class="cal-cons">-</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/16(금)</td>
+          <td><span class="name">Core PPI</span></td>
+          <td class="cal-cons">0.3%</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/16(금)</td>
+          <td><span class="name">Core Retail Sales</span></td>
+          <td class="cal-cons">0.5%</td>
+        </tr>
+        
+        <tr>
+          <td class="cal-date">10/16(금)</td>
+          <td><span class="name">Initial Jobless Claims</span></td>
+          <td class="cal-cons">195K</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </section>
+  
+
+  <!-- 섹션3: 암호화폐 -->
+  <section>
+    <h2>암호화폐 (USD)</h2>
+    <table>
+      <thead>
+        <tr><th>코인</th><th>현재가</th><th>24h 등락률</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="name">비트코인</span></td>
+          <td class="price">82,775.00</td>
+          <td class="down">-1.22%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">이더리움</span></td>
+          <td class="price">2,481.63</td>
+          <td class="down">-2.62%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">리플</span></td>
+          <td class="price">1.36</td>
+          <td class="down">-3.36%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">솔라나</span></td>
+          <td class="price">106.46</td>
+          <td class="down">-5.02%</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+    <div class="comment" data-tts="암호화폐." data-tts-key="crypto"><span class="tag">해설</span>비트코인을 비롯한 주요 암호화폐는 전반적으로 하락세를 보였으며, 비트코인 가격은 83,000달러 선을 유지하는 데 어려움을 겪는 모습입니다.</div>
+    
+  </section>
+
+  <!-- 섹션4: 주요 종목 (데이터 있을 때만) -->
+  
+  <section>
+    <h2>주요 종목</h2>
+    <table>
+      <thead>
+        <tr><th>종목명</th><th>현재가</th><th>등락률</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="name">마이크론</span></td>
+          <td class="price">989.04</td>
+          <td class="down">-3.88%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">메타</span></td>
+          <td class="price">742.96</td>
+          <td class="up">+3.38%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">TSMC</span></td>
+          <td class="price">444.35</td>
+          <td class="down">-1.98%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">브로드컴</span></td>
+          <td class="price">354.73</td>
+          <td class="down">-1.88%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">엔비디아</span></td>
+          <td class="price">226.32</td>
+          <td class="down">-1.29%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">애플</span></td>
+          <td class="price">340.97</td>
+          <td class="up">+1.29%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">테슬라</span></td>
+          <td class="price">378.03</td>
+          <td class="down">-1.22%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">마이크로소프트</span></td>
+          <td class="price">541.15</td>
+          <td class="up">+1.14%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">아마존</span></td>
+          <td class="price">259.53</td>
+          <td class="down">-1.11%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">알파벳</span></td>
+          <td class="price">352.72</td>
+          <td class="up">+0.30%</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+    <ul class="stock-comments" data-tts="주요 종목." data-tts-key="stock">
+      
+      <li><span class="ticker-name">마이크론</span> — AI 자금 조달 우려와 중국의 첨단 메모리 기술 경쟁 심화 소식이 전해지며 광범위한 반도체 섹터 약세 속에서 하락했습니다. 다만 마이크론은 351억 6천만 달러 규모의 자사주 매입 승인을 늘렸다는 소식도 함께 전해졌습니다.</li>
+      
+      <li><span class="ticker-name">메타</span> — 메타 플랫폼스는 자체 개발한 인공지능 비서인 &#39;뮤즈&#39;가 초기 성과를 보이면서 독립 앱 인텔리전스 발표 후 주가가 3.38% 상승했습니다. 새로운 AI 모델의 경쟁력에 대한 기대감이 반영된 것으로 보입니다.</li>
+      
+      <li><span class="ticker-name">TSMC</span> — AI 칩 시장의 선두 주자로서 성장 동력을 확보하고 있다는 소식에도 불구하고, 광범위한 반도체 섹터 약세와 같은 흐름 속에서 하락했습니다. 개별 촉매는 뉴스에서 확인되지 않습니다.</li>
+      
+      <li><span class="ticker-name">브로드컴</span> — AI 자금 조달 우려와 중국 경쟁 심화 소식에 반도체주 전반이 하락하는 가운데 브로드컴 역시 하락했습니다. 배당금을 지급하는 AI 관련주로 언급되기도 했습니다.</li>
+      
+      <li><span class="ticker-name">엔비디아</span> — AI 칩 리더임에도 불구하고 마이크론과 함께 AI 관련주 약세를 이끌며 하락했습니다. 마이크로소프트의 자체 AI 칩 개발 등 경쟁 심화에 대한 우려가 반영된 것으로 풀이됩니다.</li>
+      
+      <li><span class="ticker-name">애플</span> — 애플의 공동 창업자가 설립한 잊혀진 회사가 나스닥과 계약을 체결했다는 소식과 함께 주가가 상승했습니다. 기술 섹터 전반의 하락 속에서도 개별 호재로 강세를 보였습니다.</li>
+      
+      <li><span class="ticker-name">테슬라</span> — 루시드 그룹이 프랑스 시장 진출을 계획하는 등 새로운 럭셔리 EV 경쟁에 직면했다는 소식과 함께 주가가 하락했습니다. 전반적인 자유소비재 섹터 약세와 같은 흐름을 보였습니다.</li>
+      
+      <li><span class="ticker-name">마이크로소프트</span> — 클라우드 관련 강점을 가진 종목으로 언급되었으며, 시장 전반의 기술주 약세 속에서도 주가가 1.14% 상승하며 견조한 흐름을 보였습니다.</li>
+      
+      <li><span class="ticker-name">아마존</span> — 주가가 1.11% 하락하며 전반적인 자유소비재 섹터 약세와 같은 흐름을 보였습니다. 관련 뉴스에서 직접적인 하락 원인은 확인되지 않았습니다.</li>
+      
+      <li><span class="ticker-name">알파벳</span> — 메타와 함께 AI 투자 및 클라우드 매출 성장에 대한 비교 분석이 이루어지는 가운데, 주가는 소폭 상승하며 강보합을 나타냈습니다.</li>
+      
+    </ul>
+    
+  </section>
+  
+
+  <!-- 섹션5: 오늘의 무버 (데이터 있을 때만) -->
+  
+  <section>
+    <h2>오늘의 무버</h2>
+    
+    <div class="mover-caption up">상승</div>
+    <table>
+      <thead>
+        <tr><th>종목명</th><th>현재가</th><th>등락률</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="name">쇼피파이</span></td>
+          <td class="price">179.22</td>
+          <td class="up">+4.90%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">메드트로닉</span></td>
+          <td class="price">91.93</td>
+          <td class="up">+3.90%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">로블록스</span></td>
+          <td class="price">49.58</td>
+          <td class="up">+3.10%</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+    
+    <div class="mover-caption down">하락</div>
+    <table>
+      <thead>
+        <tr><th>종목명</th><th>현재가</th><th>등락률</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="name">루시드</span></td>
+          <td class="price">3.43</td>
+          <td class="down">-9.37%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">크라우드스트라이크</span></td>
+          <td class="price">263.01</td>
+          <td class="down">-4.37%</td>
+        </tr>
+        
+        <tr>
+          <td><span class="name">Arm홀딩스</span></td>
+          <td class="price">255.24</td>
+          <td class="down">-4.15%</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+    
+    <ul class="stock-comments" data-tts="오늘의 무버." data-tts-key="mover">
+      
+      <li><span class="ticker-name up">쇼피파이</span> — 캔터 피츠제럴드가 쇼피파이의 목표가를 상향 조정하고 중립 의견을 유지했다는 소식에 주가가 4.9% 상승했습니다. AI 에이전트 상거래 시대에 큰 이점을 가질 것이라는 분석도 있었습니다.</li>
+      
+      <li><span class="ticker-name up">메드트로닉</span> — 미니메드 그룹의 주식 교환 제안 예비 결과 발표와 함께 주가가 3.9% 상승했습니다. 헬스케어 섹터 전반의 강세와 같은 흐름 속에 강세를 보였습니다.</li>
+      
+      <li><span class="ticker-name up">로블록스</span> — 급등 원인은 관련 뉴스에서 확인되지 않습니다. 메타버스 플랫폼이자 자유소비재 섹터에 속하며, 해당 섹터는 전반적으로 약세를 보였으나 로블록스는 개별적으로 강세를 나타냈습니다.</li>
+      
+      <li><span class="ticker-name down">루시드</span> — 루시드가 프랑스 시장 진출을 발표했으나, 애널리스트의 목표가 하향 조정과 함께 주가가 9.37% 급락했습니다. 이는 소프트한 수요에 대한 우려를 반영한 것으로 보입니다.</li>
+      
+      <li><span class="ticker-name down">크라우드스트라이크</span> — 급락 원인은 관련 뉴스에서 확인되지 않습니다. 동종 사이버 보안 기업들의 Q2 실적 호조가 있었음에도 불구하고 주가는 하락했습니다.</li>
+      
+      <li><span class="ticker-name down">Arm홀딩스</span> — AI 컴퓨팅 생태계 기여 공로로 수상 소식이 있었으나, 퀄컴과의 라이선스 분쟁과 AI 산업 내 자금 조달 우려 및 중국 경쟁 심화 등으로 전반적인 반도체 섹터 약세와 함께 4.15% 하락했습니다.</li>
+      
+    </ul>
+    
+  </section>
+  
+
+  <!-- 주요 뉴스: 실제 헤드라인 + 출처 링크 (데이터 있을 때만) -->
+  
+  <section>
+    <h2>주요 뉴스</h2>
+    <ul class="news-list">
+      
+      <li>
+        <a href="https://investinglive.com/news/just-32-countries-now-drive-95-of-global-growth-as-ai-widens-the-gap-imf-warns/" target="_blank" rel="noopener">Just 32 countries now drive 95% of global growth as AI widens the gap, IMF warns</a>
+        <span class="src">Forexlive</span>
+      </li>
+      
+      <li>
+        <a href="https://cointelegraph.com/news/meta-launches-muse-wonder-ai-models-challenging-top-rivals?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank" rel="noopener">Meta claims new Muse Wonder AI models rival OpenAI, Anthropic</a>
+        <span class="src">Cointelegraph</span>
+      </li>
+      
+      <li>
+        <a href="https://cointelegraph.com/news/aptos-rolls-out-encrypted-mempool-to-curb-frontrunning-sandwich-attacks?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank" rel="noopener">Aptos rolls out Encrypted Mempool to curb frontrunning, sandwich attacks</a>
+        <span class="src">Cointelegraph</span>
+      </li>
+      
+      <li>
+        <a href="https://investinglive.com/cryptocurrency/more-on-standard-chartered-adds-rlusd-custody-in-dubai-eyes-lmax-collateral-link-for-clients/" target="_blank" rel="noopener">More on Standard Chartered adding RLUSD custody in Dubai, eyes LMAX collateral link for clients</a>
+        <span class="src">Forexlive</span>
+      </li>
+      
+      <li>
+        <a href="https://cointelegraph.com/news/ftx-crypto-mining-ai-data-center?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank" rel="noopener">FTX’s crypto mining venture is now used to advance AI</a>
+        <span class="src">Cointelegraph</span>
+      </li>
+      
+      <li>
+        <a href="https://cointelegraph.com/news/crypto-pac-spending-house-races-2026-midterms?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank" rel="noopener">Crypto PACs report $2.7M spending blitz on House races as midterms loom</a>
+        <span class="src">Cointelegraph</span>
+      </li>
+      
+    </ul>
+  </section>
+  
+
+  <footer>미국 증시 아침 브리핑 · 자동 생성</footer>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var bar = document.getElementById('tts-bar');
+  if (!bar) return;
+
+  // 낭독 대상: DOM(=querySelectorAll) 순서 그대로
+  var blocks = Array.prototype.slice.call(document.querySelectorAll('[data-tts]'));
+  if (blocks.length === 0) return;  // 산문 블록 0개 → 플레이어 숨김
+
+  // 낭독 엔진: (1) Google mp3 매니페스트가 있으면 <audio> 우선,
+  //            (2) 없거나 로드 실패하면 브라우저 Web Speech 로 폴백.
+  var manifest = {};
+  var mEl = document.getElementById('tts-manifest');
+  if (mEl) { try { manifest = JSON.parse(mEl.textContent) || {}; } catch (e) { manifest = {}; } }
+  var hasAudio = false;
+  for (var mk in manifest) {
+    if (Object.prototype.hasOwnProperty.call(manifest, mk)) { hasAudio = true; break; }
+  }
+
+  var synth = window.speechSynthesis || null;
+  // 오디오도 없고 Web Speech 도 없으면 조용히 종료 (바는 hidden 유지)
+  if (!hasAudio && !synth) return;
+
+  var toggleBtn = document.getElementById('tts-toggle');
+  var stopBtn = document.getElementById('tts-stop');
+  var statusEl = document.getElementById('tts-status');
+  var rateSel = document.getElementById('tts-rate');
+  var voiceSel = document.getElementById('tts-voice');
+  var noteEl = document.getElementById('tts-note');
+
+  // 크롬 데스크톱만 Web Speech keepalive 대상 (사파리/모바일은 오히려 끊김)
+  var ua = navigator.userAgent;
+  var isChromeDesktop = /Chrome/.test(ua) && !/Mobile|Android|iPhone|iPad|iPod/.test(ua);
+
+  // ----- 상태 -----
+  var idx = 0;              // 현재 블록 인덱스
+  var playing = false;      // 사용자가 재생을 의도 (정지 아님)
+  var paused = false;
+  var mode = null;          // 'audio' | 'speech'
+  var curAudio = null;
+  var gen = 0;              // stale 콜백 차단용 세대 카운터
+  var keepalive = null;
+  var currentVoice = null;
+  var koVoices = [];
+  var chunks = [];          // speech 폴백 청크 버퍼
+  var chunkPos = 0;
+
+  // ----- 텍스트 정규화 (Web Speech 폴백용, 파이썬 normalize 와 동일 규칙) -----
+  function normalize(text) {
+    var t = String(text).replace(/\s+/g, ' ').trim();
+    t = t.replace(/%/g, ' 퍼센트');
+    t = t.replace(/\$/g, ' 달러');
+    t = t.replace(/[▲▼]/g, '');
+    t = t.replace(/\+(?=\s*\d)/g, ' 플러스 ');
+    t = t.replace(/-(?=\s*\d)/g, ' 마이너스 ');
+    t = t.replace(/\s+/g, ' ').trim();
+    return t;
+  }
+
+  // 청크 분할: 문장 단위(lookbehind 미사용) + 200자 초과 시 공백 기준 추가 분할
+  function chunkText(text) {
+    var sentences = text.match(/[^.!?]+[.!?]*\s*/g) || [text];
+    var out = [];
+    for (var i = 0; i < sentences.length; i++) {
+      var s = sentences[i].trim();
+      if (!s) continue;
+      if (s.length <= 200) { out.push(s); continue; }
+      var words = s.split(' ');
+      var cur = '';
+      for (var j = 0; j < words.length; j++) {
+        var next = cur ? cur + ' ' + words[j] : words[j];
+        if (next.length > 200 && cur) { out.push(cur); cur = words[j]; }
+        else { cur = next; }
+      }
+      if (cur) out.push(cur);
+    }
+    return out;
+  }
+
+  function currentRate() { return parseFloat(rateSel.value) || 1.0; }
+
+  // ----- 크롬 15초 끊김 버그 keepalive (Web Speech 전용) -----
+  function startKeepalive() {
+    if (!isChromeDesktop || !synth) return;
+    stopKeepalive();
+    keepalive = setInterval(function () {
+      if (synth.speaking && !synth.paused) { synth.pause(); synth.resume(); }
+    }, 10000);
+  }
+  function stopKeepalive() { if (keepalive) { clearInterval(keepalive); keepalive = null; } }
+
+  // ----- UI -----
+  function clearActive() { blocks.forEach(function (b) { b.classList.remove('tts-active'); }); }
+  function activateBlock(i) {
+    clearActive();
+    var b = blocks[i];
+    if (b) { b.classList.add('tts-active'); b.scrollIntoView({ block: 'center' }); }
+    statusEl.textContent = (i + 1) + '/' + blocks.length;
+  }
+  function setPlayingUI(on) { toggleBtn.textContent = on ? '⏸ 일시정지' : '▶ 재생'; }
+
+  function releaseAudio() {
+    if (curAudio) {
+      curAudio.onended = null;
+      curAudio.onerror = null;
+      try { curAudio.pause(); } catch (e) {}
+      curAudio = null;
+    }
+  }
+
+  // ----- 블록 재생 (오디오 우선, 실패 시 스피치) -----
+  function playBlock(i) {
+    gen += 1;
+    var myGen = gen;
+    idx = i;
+    if (i >= blocks.length) { finish(); return; }
+    activateBlock(i);
+    releaseAudio();
+
+    var key = blocks[i].getAttribute('data-tts-key') || '';
+    var src = manifest[key];
+    if (src) {
+      mode = 'audio';
+      var audio = new Audio(src);
+      audio.playbackRate = currentRate();
+      curAudio = audio;
+      audio.onended = function () { if (myGen === gen && playing) advance(); };
+      audio.onerror = function () {
+        if (myGen !== gen || !playing) return;
+        speakBlock(i, myGen);   // mp3 로드 실패(404 등) → 이 블록만 Web Speech 폴백
+      };
+      var p = audio.play();
+      if (p && p.catch) { p.catch(function () {}); }   // 재생 거부는 조용히 무시
+      return;
+    }
+    speakBlock(i, myGen);   // 매니페스트에 없는 블록 → Web Speech
+  }
+
+  function speakBlock(i, myGen) {
+    mode = 'speech';
+    releaseAudio();
+    if (!synth || !currentVoice) { advance(); return; }   // 말할 수단 없음 → 건너뜀
+    var prefix = blocks[i].getAttribute('data-tts') || '';
+    var full = (prefix ? prefix + ' ' : '') + blocks[i].textContent;
+    chunks = chunkText(normalize(full));
+    chunkPos = 0;
+    if (chunks.length === 0) { advance(); return; }
+    if (synth.speaking || synth.pending) synth.cancel();
+    startKeepalive();
+    speakNextChunk(myGen);
+  }
+
+  function speakNextChunk(myGen) {
+    if (myGen !== gen || !playing) return;
+    if (chunkPos >= chunks.length) { advance(); return; }
+    var u = new SpeechSynthesisUtterance(chunks[chunkPos]);
+    u.lang = (currentVoice && currentVoice.lang) || 'ko-KR';
+    if (currentVoice) u.voice = currentVoice;
+    u.rate = currentRate();
+    u.onend = function () { if (myGen !== gen || !playing) return; chunkPos += 1; speakNextChunk(myGen); };
+    u.onerror = function () { if (myGen !== gen || !playing) return; chunkPos += 1; speakNextChunk(myGen); };
+    synth.speak(u);
+  }
+
+  function advance() {
+    if (idx + 1 >= blocks.length) { finish(); return; }
+    playBlock(idx + 1);
+  }
+
+  function finish() {
+    gen += 1;
+    playing = false; paused = false; mode = null;
+    releaseAudio();
+    stopKeepalive();
+    clearActive();
+    setPlayingUI(false);
+    idx = 0;
+    statusEl.textContent = '완료';
+  }
+
+  // 5. iOS/오디오 정책: 첫 재생은 사용자 제스처(클릭) 안에서 동기 호출돼야 함
+  function play() {
+    if (playing && paused) {                 // 일시정지 → 재개
+      paused = false;
+      setPlayingUI(true);
+      if (mode === 'audio' && curAudio) {
+        var pr = curAudio.play(); if (pr && pr.catch) pr.catch(function () {});
+      } else if (mode === 'speech' && synth) {
+        synth.resume(); startKeepalive();
+      }
+      return;
+    }
+    if (playing) return;                     // 이미 재생 중
+    playing = true;
+    paused = false;
+    setPlayingUI(true);
+    if (idx >= blocks.length) idx = 0;
+    playBlock(idx);                          // 클릭 핸들러 내 동기 호출
+  }
+
+  function pauseTts() {
+    if (!playing || paused) return;
+    paused = true;
+    setPlayingUI(false);
+    if (mode === 'audio' && curAudio) { try { curAudio.pause(); } catch (e) {} }
+    else if (mode === 'speech' && synth) { synth.pause(); stopKeepalive(); }
+  }
+
+  function stopTts() {
+    gen += 1;
+    playing = false; paused = false; mode = null;
+    releaseAudio();
+    if (synth) synth.cancel();
+    stopKeepalive();
+    idx = 0;
+    clearActive();
+    setPlayingUI(false);
+    statusEl.textContent = '0/' + blocks.length;
+  }
+
+  toggleBtn.addEventListener('click', function () {
+    if (playing && !paused) pauseTts();
+    else play();
+  });
+  stopBtn.addEventListener('click', stopTts);
+
+  rateSel.addEventListener('change', function () {
+    // 오디오는 즉시 반영, 스피치는 다음 청크부터
+    if (mode === 'audio' && curAudio) curAudio.playbackRate = currentRate();
+    rateSel.blur();
+  });
+
+  voiceSel.addEventListener('change', function () {
+    for (var i = 0; i < koVoices.length; i++) {
+      if (koVoices[i].voiceURI === voiceSel.value) { currentVoice = koVoices[i]; break; }
+    }
+  });
+
+  // ----- Web Speech 음성 목록 (폴백용): getVoices()가 처음엔 빈 배열 → onvoiceschanged 재구성 -----
+  function refreshVoices() {
+    if (!synth) return;
+    var all = synth.getVoices() || [];
+    koVoices = all.filter(function (v) { return /^ko/i.test(v.lang); });   // lang 'ko*' 만
+    voiceSel.innerHTML = '';
+    koVoices.forEach(function (v) {
+      var opt = document.createElement('option');
+      opt.value = v.voiceURI;
+      opt.textContent = v.name + ' (' + v.lang + ')';
+      voiceSel.appendChild(opt);
+    });
+    var keep = null;
+    if (currentVoice) {
+      for (var i = 0; i < koVoices.length; i++) {
+        if (koVoices[i].voiceURI === currentVoice.voiceURI) { keep = koVoices[i]; break; }
+      }
+    }
+    currentVoice = keep || (koVoices.length ? koVoices[0] : null);
+    if (currentVoice) voiceSel.value = currentVoice.voiceURI;
+    updateControls();
+  }
+
+  // 컨트롤 노출/활성 상태: 오디오 유무·한국어 음성 유무에 따라 조정
+  function updateControls() {
+    if (!synth) { voiceSel.hidden = true; noteEl.hidden = true; return; }
+    var allHaveAudio = hasAudio && blocks.every(function (b) {
+      return !!manifest[b.getAttribute('data-tts-key') || ''];
+    });
+    if (allHaveAudio) {
+      // 모든 블록이 mp3 → 음성 select 불필요 (Google 음성 사용)
+      voiceSel.hidden = true;
+      noteEl.hidden = true;
+      return;
+    }
+    if (koVoices.length === 0) {
+      voiceSel.hidden = true;
+      if (hasAudio) {
+        noteEl.hidden = true;   // 오디오로 재생은 됨 (일부 폴백 블록만 무음일 수 있음)
+      } else {
+        noteEl.textContent = '이 브라우저는 한국어 음성이 없습니다';
+        noteEl.hidden = false;
+        toggleBtn.disabled = true; stopBtn.disabled = true; rateSel.disabled = true;
+      }
+      return;
+    }
+    voiceSel.hidden = false;
+    noteEl.hidden = true;
+  }
+
+  // ----- 초기화 -----
+  statusEl.textContent = '0/' + blocks.length;
+  bar.hidden = false;
+  if (synth) {
+    refreshVoices();
+    if (typeof synth.onvoiceschanged !== 'undefined') synth.onvoiceschanged = refreshVoices;
+  } else {
+    updateControls();
+  }
+
+  // 6. 페이지 이탈 시 낭독 중단 (안 그러면 음성/오디오가 계속 남음)
+  window.addEventListener('pagehide', function () {
+    if (synth) synth.cancel();
+    releaseAudio();
+  });
+})();
+</script>
+</body>
+</html>
